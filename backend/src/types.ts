@@ -11,31 +11,33 @@ export interface EnvironmentVariables {
 }
 
 /**
- * 参加者データのインターフェース（スプレッドシート22列に対応）
+ * 参加者データのインターフェース（スプレッドシート23列に対応）
  */
 export interface Participant {
-  id: string; // [1] システムID (UUID)
-  organization: string; // [2] 法人・団体名
-  lastName: string; // [3] 姓
-  firstName: string; // [4] 名
-  lastNameKana: string; // [5] 姓（フリガナ） ※検索キー
-  firstNameKana: string; // [6] 名（フリガナ） ※検索キー
-  phone1: string; // [7] 電話番号（上3ケタ）
-  phone2: string; // [8] 電話番号（中4ケタ）
-  phone3: string; // [9] 電話番号（下4ケタ）
-  email: string; // [10] メールアドレス
-  position: string; // [11] 役職名
-  transportation: string; // [12] 交通手段
-  desiredGrade: string; // [13] 授業公開希望学年
-  subcommittee1: string; // [14] 分科会（第1希望）
-  subcommittee2: string; // [15] 分科会（第2希望）
-  notes: string; // [16] 連絡・要望
-  location: string; // [17] 所属所在地
-  checkedIn: boolean; // [18] 受付状況 (TRUE/FALSE)
-  bentoExchanged: boolean; // [19] 弁当引換 (TRUE/FALSE)
-  feePaid: boolean; // [20] 参加費支払 (TRUE/FALSE)
-  isWalkin: boolean; // [21] 当日受付 (TRUE/FALSE)
-  updatedAt: string; // [22] 最終更新日時
+  id: string; // [1] A: システムID (UUID)
+  organization: string; // [2] B: 法人・団体名
+  lastName: string; // [3] C: 姓
+  firstName: string; // [4] D: 名
+  lastNameKana: string; // [5] E: 姓（フリガナ） ※検索キー
+  firstNameKana: string; // [6] F: 名（フリガナ） ※検索キー
+  phone1: string; // [7] G: 電話番号（上3ケタ）
+  phone2: string; // [8] H: 電話番号（中4ケタ）
+  phone3: string; // [9] I: 電話番号（下4ケタ）
+  email: string; // [10] J: メールアドレス
+  position: string; // [11] K: 役職名
+  transportation: string; // [12] L: 交通手段
+  desiredGrade: string; // [13] M: 授業公開希望学年
+  subcommittee1: string; // [14] N: 分科会（第1希望）
+  subcommittee2: string; // [15] O: 分科会（第2希望）
+  notes: string; // [16] P: 連絡・要望
+  location: string; // [17] Q: 所属所在地
+  checkedIn: boolean; // [18] R: 受付状況 (TRUE/FALSE)
+  bentoOrdered: boolean; // [19] S: 弁当注文 (TRUE/FALSE: 事前注文有無)
+  feePaid: boolean; // [20] T: 参加費支払 (TRUE/FALSE)
+  isWalkin: boolean; // [21] U: 当日受付 (TRUE/FALSE)
+  updatedAt: string; // [22] V: 最終更新日時
+  bentoConfirmed: boolean; // [23] W: 弁当券引換確認 (TRUE/FALSE)
+  bentoExchanged: boolean; // 互換用エイリアス（bentoConfirmedと同等）
   rowIndex?: number; // スプレッドシート上の行番号（2行目以降、1-indexed）
 }
 
@@ -44,9 +46,10 @@ export interface Participant {
  */
 export interface UpdateStatusRequest {
   id: string; // 対象のシステムID
-  checkedIn?: boolean; // 受付状況
-  bentoExchanged?: boolean; // 弁当引換
-  feePaid?: boolean; // 参加費支払
+  checkedIn?: boolean; // 受付状況 (R列)
+  bentoConfirmed?: boolean; // 弁当券引換確認 (W列)
+  bentoExchanged?: boolean; // 弁当券引換確認（互換用）
+  feePaid?: boolean; // 参加費支払 (T列)
   rowIndex?: number; // 行番号（指定があれば検索をスキップ可能）
 }
 
@@ -71,7 +74,8 @@ export interface WalkinRegistrationRequest {
   notes?: string; // 連絡・要望
   location?: string; // 所属所在地
   checkedIn?: boolean; // 受付状況（指定なし時はtrue）
-  bentoExchanged?: boolean; // 弁当引換（指定なし時はfalse）
+  bentoOrdered?: boolean; // 弁当注文（当日受付時はデフォルトfalse）
+  bentoConfirmed?: boolean; // 弁当引換確認（指定なし時はfalse）
   feePaid?: boolean; // 参加費支払（指定なし時はfalse）
 }
 

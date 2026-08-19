@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>来場者受付システム | 教職員研究大会</title>
-  <meta name="description" content="教職員研究大会の受付・来場者情報照合システム（iPad最適化）">
+  <meta name="description" content="教職員研究大会の受付・来場者情報照合システム">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -57,7 +57,7 @@
     </div>
   </div>
 
-  <!-- トップナビゲーションバー（iPad向け大型ヘッダー） -->
+  <!-- トップナビゲーションバー -->
   <header class="glass-header sticky top-0 z-30 border-b border-slate-200/80 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
       <!-- タイトル & 大会名 -->
@@ -68,12 +68,7 @@
           </svg>
         </div>
         <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">来場者照合・受付管理</h1>
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-              iPad版
-            </span>
-          </div>
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">来場者照合・受付管理</h1>
           <p class="text-xs text-slate-500 font-medium">教職員研究大会 運営本部</p>
         </div>
       </div>
@@ -181,7 +176,7 @@
 
     <!-- 1. 検索タブセクション -->
     <section id="searchSection" class="flex-1 flex flex-col space-y-4">
-      <!-- 検索入力バー（iPad操作用大型入力ボックス） -->
+      <!-- 検索入力バー -->
       <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-2 sm:p-3 flex items-center">
         <div class="pl-3 pr-2 text-indigo-600">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,17 +231,18 @@
       <!-- 一覧件数情報 -->
       <div class="flex justify-between items-center px-1 text-xs sm:text-sm font-semibold text-slate-500">
         <span>表示件数: <span id="listResultCount" class="text-indigo-600 font-bold">0件</span></span>
+        <span class="text-xs text-slate-400">行をタップして詳細確認・更新</span>
       </div>
 
-      <!-- 一覧グリッド -->
-      <div id="listResultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 flex-1">
-        <!-- JSで描画 -->
+      <!-- 一覧テーブルコンテナ（スプレッドシート風 表形式 Table） -->
+      <div id="listResultsContainer" class="w-full flex-1">
+        <!-- JSで表を描画 -->
       </div>
     </section>
 
   </main>
 
-  <!-- 3. 詳細・ステータス更新モーダル（iPadタッチ操作最適化） -->
+  <!-- 3. 詳細・ステータス更新モーダル -->
   <div id="detailModal" class="hidden fixed inset-0 z-50 overflow-y-auto overscroll-behavior-contain">
     <!-- バックドロップ -->
     <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
@@ -277,14 +273,14 @@
           </p>
         </div>
 
-        <!-- 3大ステータス更新トグルボタン（iPadでのタッチ領域特大） -->
+        <!-- 3大ステータス更新トグルボタン -->
         <div class="space-y-3 mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-          <p class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">ステータス更新（タップで即時切替）</p>
+          <p class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">ステータス更新</p>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <!-- 1. 受付状況 -->
             <button type="button" id="toggleCheckinBtn" class="touch-target py-3.5 px-4 rounded-xl font-extrabold text-base transition flex items-center justify-center space-x-2">
-              <span>受付状況</span>
+              <span>未受付</span>
             </button>
             <!-- 2. 弁当引換 -->
             <button type="button" id="toggleBentoBtn" class="touch-target py-3.5 px-4 rounded-xl font-extrabold text-base transition flex items-center justify-center space-x-2">
@@ -292,7 +288,7 @@
             </button>
             <!-- 3. 参加費支払 -->
             <button type="button" id="toggleFeeBtn" class="touch-target py-3.5 px-4 rounded-xl font-extrabold text-base transition flex items-center justify-center space-x-2">
-              <span>参加費支払</span>
+              <span>未受領</span>
             </button>
           </div>
         </div>
@@ -354,11 +350,6 @@
       </div>
     </div>
   </div>
-
-  <!-- フッター -->
-  <footer class="mt-auto py-3 bg-white border-t border-slate-200 text-center text-xs text-slate-400">
-    &copy; 2026 教職員研究大会 来場者照合受付システム
-  </footer>
 
   <!-- スクリプト読み込み順: config -> queue -> app -->
   <script src="./js/config.js"></script>
