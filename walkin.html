@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>当日参加受付 | 教職員研究大会</title>
+  <meta name="description" content="教職員研究大会の当日参加者向け受付登録フォームです。">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- カスタムスタイル -->
+  <link rel="stylesheet" href="./css/custom.css">
+</head>
+<body class="min-h-full flex flex-col antialiased text-slate-800">
+
+  <!-- ヘッダー -->
+  <header class="glass-header sticky top-0 z-30 border-b border-slate-200/80 shadow-sm">
+    <div class="max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">教職員研究大会</h1>
+          <p class="text-xs font-semibold text-indigo-600">当日参加受付フォーム</p>
+        </div>
+      </div>
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+        <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 mr-1.5 animate-pulse"></span>
+        当日受付
+      </span>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-1 max-w-xl w-full mx-auto p-4 sm:p-6">
+
+    <!-- アラート通知コンテナ -->
+    <div id="alertContainer" class="hidden"></div>
+
+    <!-- 1. 入力フォームセクション -->
+    <section id="formSection" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 animate-fade-in">
+      <div class="mb-6 pb-4 border-b border-slate-100">
+        <h2 class="text-lg font-bold text-slate-900">参加者情報のご入力</h2>
+        <p class="text-xs text-slate-500 mt-1">当日ご参加いただく皆様の情報をご入力ください。<span class="text-rose-500 font-semibold">*</span> は必須項目です。</p>
+      </div>
+
+      <form id="walkinForm" class="space-y-5" novalidate>
+
+        <!-- 氏名 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            お名前 <span class="text-rose-500">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <input type="text" id="lastName" name="lastName" required placeholder="姓（例: 山田）"
+                class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+            </div>
+            <div>
+              <input type="text" id="firstName" name="firstName" required placeholder="名（例: 太郎）"
+                class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+            </div>
+          </div>
+        </div>
+
+        <!-- フリガナ（検索キーとして重要） -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            フリガナ（カタカナ） <span class="text-rose-500">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <input type="text" id="lastNameKana" name="lastNameKana" required placeholder="セイ（例: ヤマダ）"
+                class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+            </div>
+            <div>
+              <input type="text" id="firstNameKana" name="firstNameKana" required placeholder="メイ（例: タロウ）"
+                class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+            </div>
+          </div>
+        </div>
+
+        <!-- 所属・法人名 -->
+        <div>
+          <label for="organization" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            ご所属（学校名・法人・団体名） <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="organization" name="organization" required placeholder="例: 〇〇市立第一中学校"
+            class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+        </div>
+
+        <!-- 役職名 & 所属所在地 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="position" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              役職名
+            </label>
+            <input type="text" id="position" name="position" placeholder="例: 教諭 / 校長 / 主幹教諭"
+              class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+          </div>
+          <div>
+            <label for="location" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              所属所在地（都道府県・市区町村）
+            </label>
+            <input type="text" id="location" name="location" placeholder="例: 広島県広島市"
+              class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+          </div>
+        </div>
+
+        <!-- 電話番号 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            電話番号
+          </label>
+          <div class="flex items-center space-x-2">
+            <input type="tel" id="phone1" name="phone1" maxlength="4" placeholder="090"
+              class="w-full text-center px-3 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white font-medium">
+            <span class="text-slate-400 font-bold">-</span>
+            <input type="tel" id="phone2" name="phone2" maxlength="4" placeholder="1234"
+              class="w-full text-center px-3 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white font-medium">
+            <span class="text-slate-400 font-bold">-</span>
+            <input type="tel" id="phone3" name="phone3" maxlength="4" placeholder="5678"
+              class="w-full text-center px-3 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white font-medium">
+          </div>
+        </div>
+
+        <!-- メールアドレス -->
+        <div>
+          <label for="email" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            メールアドレス
+          </label>
+          <input type="email" id="email" name="email" placeholder="example@school.ed.jp"
+            class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+        </div>
+
+        <!-- 交通手段 & 授業公開希望学年 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="transportation" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              来場交通手段
+            </label>
+            <select id="transportation" name="transportation"
+              class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white font-medium">
+              <option value="">選択してください</option>
+              <option value="公共交通機関（電車・バス）">公共交通機関（電車・バス）</option>
+              <option value="自家用車">自家用車</option>
+              <option value="徒歩・自転車">徒歩・自転車</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+          <div>
+            <label for="desiredGrade" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              授業公開希望学年
+            </label>
+            <select id="desiredGrade" name="desiredGrade"
+              class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white font-medium">
+              <option value="">選択してください</option>
+              <option value="第1学年">第1学年</option>
+              <option value="第2学年">第2学年</option>
+              <option value="第3学年">第3学年</option>
+              <option value="第4学年">第4学年</option>
+              <option value="第5学年">第5学年</option>
+              <option value="第6学年">第6学年</option>
+              <option value="全学年自由見学">全学年自由見学</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 分科会希望 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="subcommittee1" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              分科会（第1希望）
+            </label>
+            <input type="text" id="subcommittee1" name="subcommittee1" placeholder="例: 国語科 / ICT活用部会"
+              class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+          </div>
+          <div>
+            <label for="subcommittee2" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              分科会（第2希望）
+            </label>
+            <input type="text" id="subcommittee2" name="subcommittee2" placeholder="例: 算数・数学科 / 特別支援"
+              class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium">
+          </div>
+        </div>
+
+        <!-- 連絡・要望 -->
+        <div>
+          <label for="notes" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            連絡事項・ご要望
+          </label>
+          <textarea id="notes" name="notes" rows="2" placeholder="配慮事項や特記事項がございましたらご記入ください"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50/50 focus:bg-white placeholder-slate-400 font-medium resize-none"></textarea>
+        </div>
+
+        <!-- 送信ボタン -->
+        <div class="pt-3">
+          <button type="submit" id="submitButton"
+            class="w-full touch-target py-3.5 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-base shadow-lg shadow-indigo-200 active:scale-[0.99] transition flex items-center justify-center space-x-2">
+            <!-- スピナー (非表示時 hidden) -->
+            <svg id="buttonSpinner" class="hidden animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="buttonText">当日参加を受付する</span>
+          </button>
+          <p class="text-[11px] text-center text-slate-400 mt-2">
+            送信完了後、受付窓口にてお名前をお伝えください。
+          </p>
+        </div>
+      </form>
+    </section>
+
+    <!-- 2. 登録完了セクション（初期非表示） -->
+    <section id="completionSection" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8 text-center animate-modal-pop">
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+        <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+
+      <span class="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full mb-2 border border-emerald-200">
+        当日受付完了
+      </span>
+      <h2 class="text-xl font-extrabold text-slate-900 mb-1">
+        受付登録が完了しました
+      </h2>
+      <p class="text-sm text-slate-600 mb-6">
+        ご登録いただきありがとうございます。受付窓口にて以下の受付番号またはお名前をお伝えください。
+      </p>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left space-y-2">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-500 font-medium">参加者氏名</span>
+          <span id="registeredName" class="text-slate-900 font-bold text-base">-</span>
+        </div>
+        <div class="flex justify-between items-center text-sm pt-2 border-t border-slate-200">
+          <span class="text-slate-500 font-medium">受付コード (ID)</span>
+          <span id="registeredId" class="font-mono text-indigo-700 font-bold tracking-wider">-</span>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <button type="button" id="resetFormButton"
+          class="w-full touch-target py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+          別の参加者を登録する
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="mt-auto py-4 text-center text-xs text-slate-400">
+    &copy; 2026 教職員研究大会 事務局
+  </footer>
+
+  <!-- スクリプト読み込み -->
+  <script src="./js/config.js"></script>
+  <script src="./js/walkin.js"></script>
+</body>
+</html>
