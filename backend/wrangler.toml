@@ -1,0 +1,12 @@
+name = "conference-reception-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[vars]
+GOOGLE_SHEET_NAME = "参加者情報一覧"
+CORS_ORIGIN = "*"
+
+# 以下の環境変数はCloudflare Dashboardまたは wrangler secret put で設定します:
+# GOOGLE_SERVICE_ACCOUNT_EMAIL = "xxx@xxx.iam.gserviceaccount.com"
+# GOOGLE_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n..."
+# GOOGLE_SPREADSHEET_ID = "スプレッドシートID"

@@ -1,0 +1,11 @@
+{
+  "name": "chu-koku-uketuke",
+  "version": "1.0.0",
+  "description": "教職員研究大会 来場者情報照合システム",
+  "scripts": {
+    "deploy:frontend": "gh-pages -d frontend"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}
