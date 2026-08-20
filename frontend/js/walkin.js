@@ -282,18 +282,34 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
-   * 別の参加者を登録するボタン
+   * 大会名などの公開設定情報を取得し、画面およびドキュメントタイトルに動的反映
    */
-  resetFormButton?.addEventListener('click', () => {
-    formElement?.reset();
-    clearAlert();
-    if (formSection && completionSection) {
-      completionSection.classList.add('hidden');
-      formSection.classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  });
+  async function loadConferenceSettings() {
+    const baseUrl = window.AppConfig?.apiBaseUrl || '';
+    try {
+      const response = await fetch(`${baseUrl}/api/settings`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
 
-  // 選択肢マスタの読み込み実行
+      if (!response.ok) return;
+
+      const result = await response.json();
+      if (result.success && result.data?.conferenceName) {
+        const confName = result.data.conferenceName;
+        // 1. タイトルタグの動的更新
+        document.title = `${confName} - 当日参加受付`;
+        // 2. 指定されたクラス要素のテキスト更新
+        document.querySelectorAll('.conference-name').forEach((el) => {
+          el.textContent = confName;
+        });
+      }
+    } catch (error) {
+      console.warn('[Settings Warning] 設定情報の取得に失敗しました:', error);
+    }
+  }
+
+  // 設定情報および選択肢マスタの読み込み実行
+  loadConferenceSettings();
   loadFormOptions();
 });

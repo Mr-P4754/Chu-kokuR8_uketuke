@@ -22,6 +22,14 @@ export interface FormOptionsData {
 }
 
 /**
+ * 公開設定情報（設定マスタから取得、機密情報は除外）
+ */
+export interface PublicSettingsData {
+  conferenceName: string;
+  [key: string]: string;
+}
+
+/**
  * 参加者データのインターフェース（スプレッドシート24列に対応）
  */
 export interface Participant {

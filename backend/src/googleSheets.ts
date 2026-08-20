@@ -4,6 +4,7 @@ import {
   UpdateStatusRequest,
   WalkinRegistrationRequest,
   FormOptionsData,
+  PublicSettingsData,
 } from './types';
 
 /**
@@ -658,5 +659,69 @@ export async function fetchSystemPassword(env: EnvironmentVariables): Promise<st
   } catch (error) {
     console.error('[Settings Error]', error);
     return env.AUTH_PASSWORD || '1204';
+  }
+}
+
+/**
+ * 設定マスタシートから公開設定情報（大会名など）を取得（機密情報は除外）
+ */
+export async function fetchPublicSettings(env: EnvironmentVariables): Promise<PublicSettingsData> {
+  const token = await getGoogleAccessToken(
+    env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    env.GOOGLE_PRIVATE_KEY
+  );
+
+  const sheetName = '設定マスタ';
+  const spreadsheetId = extractSpreadsheetId(env.GOOGLE_SPREADSHEET_ID);
+  const range = encodeURIComponent(`'${sheetName}'!A2:B`);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
+
+  // デフォルト値
+  const defaultSettings: PublicSettingsData = {
+    conferenceName: '教職員研究大会',
+  };
+
+  try {
+    const response = await fetchWithExponentialBackoff(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.warn(`[Settings Warning] 設定マスタの取得に失敗したためデフォルト設定を使用します (${response.status})`);
+      return defaultSettings;
+    }
+
+    const result = (await response.json()) as { values?: string[][] };
+    const rows = result.values || [];
+
+    const publicSettings: PublicSettingsData = { ...defaultSettings };
+    // 機密情報として除外するキー名のパターン
+    const sensitiveKeys = ['システムパスワード', 'パスワード', 'password', 'secret', 'token', 'key', 'auth'];
+
+    for (const row of rows) {
+      if (!row || row.length < 2) continue;
+      const rawKey = String(row[0] || '').trim();
+      const rawVal = String(row[1] || '').trim();
+      if (!rawKey) continue;
+
+      // 機密情報を除外
+      const isSensitive = sensitiveKeys.some((sk) => rawKey.toLowerCase().includes(sk.toLowerCase()));
+      if (isSensitive) continue;
+
+      // 大会名のキー判定
+      if (rawKey === '大会名' || rawKey.toLowerCase() === 'conferencename' || rawKey.toLowerCase() === 'conference_name') {
+        if (rawVal) {
+          publicSettings.conferenceName = rawVal;
+        }
+      } else {
+        publicSettings[rawKey] = rawVal;
+      }
+    }
+
+    return publicSettings;
+  } catch (error) {
+    console.error('[Public Settings Error]', error);
+    return defaultSettings;
   }
 }

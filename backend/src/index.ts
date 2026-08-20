@@ -6,6 +6,7 @@ import {
   appendWalkinParticipant,
   fetchFormOptions,
   fetchSystemPassword,
+  fetchPublicSettings,
 } from './googleSheets';
 import {
   EnvironmentVariables,
@@ -13,6 +14,7 @@ import {
   UpdateStatusRequest,
   WalkinRegistrationRequest,
   FormOptionsData,
+  PublicSettingsData,
   ApiResponse,
 } from './types';
 
@@ -78,6 +80,14 @@ interface OptionsCache {
 }
 let cachedOptions: OptionsCache | null = null;
 const OPTIONS_CACHE_TTL_MS = 30000;
+
+// 4. 公開設定情報用インメモリキャッシュ（TTL: 60秒）
+interface SettingsCache {
+  data: PublicSettingsData;
+  timestamp: number;
+}
+let cachedSettings: SettingsCache | null = null;
+const SETTINGS_CACHE_TTL_MS = 60000;
 
 // ==========================================
 // APIエンドポイント
@@ -213,7 +223,7 @@ app.get('/api/options', async (context) => {
 });
 
 /**
- * 5. スプレッドシート連動パスワード認証API (新設)
+ * 5. スプレッドシート連動パスワード認証API
  * POST /api/auth
  */
 app.post('/api/auth', async (context) => {
@@ -255,6 +265,34 @@ app.post('/api/auth', async (context) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '認証処理中にエラーが発生しました。';
     console.error('[API Error: POST /api/auth]', errorMessage);
+    return context.json<ApiResponse>({ success: false, error: errorMessage }, 500);
+  }
+});
+
+/**
+ * 6. 公開設定情報（大会名等）取得API (新設 - TTL 60秒キャッシュ)
+ * GET /api/settings
+ */
+app.get('/api/settings', async (context) => {
+  try {
+    const now = Date.now();
+    if (cachedSettings && (now - cachedSettings.timestamp < SETTINGS_CACHE_TTL_MS)) {
+      return context.json<ApiResponse<PublicSettingsData>>({
+        success: true,
+        data: cachedSettings.data,
+      });
+    }
+
+    const settings = await fetchPublicSettings(context.env);
+    cachedSettings = { data: settings, timestamp: Date.now() };
+
+    return context.json<ApiResponse<PublicSettingsData>>({
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '設定情報の取得中にエラーが発生しました。';
+    console.error('[API Error: GET /api/settings]', errorMessage);
     return context.json<ApiResponse>({ success: false, error: errorMessage }, 500);
   }
 });
