@@ -7,6 +7,7 @@ import {
 } from './googleSheets';
 import {
   EnvironmentVariables,
+  Participant,
   UpdateStatusRequest,
   WalkinRegistrationRequest,
   ApiResponse,
@@ -40,14 +41,49 @@ app.get('/api/health', (context) => {
   });
 });
 
+// 参加者一覧インメモリキャッシュインターフェース (TTL: 5秒)
+interface ParticipantsCache {
+  data: Participant[];
+  timestamp: number;
+}
+
+// グローバルキャッシュ変数
+let cachedParticipants: ParticipantsCache | null = null;
+const CACHE_TTL_MS = 5000;
+
+/**
+ * 参加者一覧キャッシュを無効化（パージ）
+ */
+function clearParticipantsCache(): void {
+  cachedParticipants = null;
+}
+
 /**
  * 1. 参加者一覧データ取得API
  * GET /api/participants
- * スプレッドシートの全参加者データ（22列）を取得してJSON形式で返却
+ * 5秒以内であればメモリキャッシュから返却、経過時はSheets APIから最新取得してキャッシュ更新
  */
 app.get('/api/participants', async (context) => {
   try {
+    const now = Date.now();
+
+    // キャッシュが有効期間内（5秒以内）であればキャッシュデータを返却
+    if (cachedParticipants && (now - cachedParticipants.timestamp < CACHE_TTL_MS)) {
+      return context.json<ApiResponse<Participant[]>>({
+        success: true,
+        count: cachedParticipants.data.length,
+        data: cachedParticipants.data,
+      });
+    }
+
+    // Sheets APIから最新データを取得
     const participants = await fetchAllParticipants(context.env);
+
+    // キャッシュを更新
+    cachedParticipants = {
+      data: participants,
+      timestamp: Date.now(),
+    };
 
     return context.json<ApiResponse<typeof participants>>({
       success: true,
@@ -71,7 +107,7 @@ app.get('/api/participants', async (context) => {
 /**
  * 2. 受付ステータス更新API
  * POST /api/update
- * 「受付状況」「弁当引換」「参加費支払」のフラグを更新し、最終更新日時を記録
+ * 「受付状況」「弁当引換」「参加費支払」のフラグを更新し、成功時にキャッシュを無効化
  */
 app.post('/api/update', async (context) => {
   try {
@@ -89,6 +125,9 @@ app.post('/api/update', async (context) => {
     }
 
     const updatedData = await updateParticipantStatus(context.env, body);
+
+    // 更新成功時にキャッシュを即座にクリア
+    clearParticipantsCache();
 
     return context.json<ApiResponse<typeof updatedData>>({
       success: true,
@@ -112,7 +151,7 @@ app.post('/api/update', async (context) => {
 /**
  * 3. 当日参加者新規登録API
  * POST /api/walkin
- * 当日参加者フォームからの登録を受け付け、UUIDを自動採番してスプレッドシートへ追加
+ * 当日参加者フォームからの登録を受け付け、成功時にキャッシュを無効化
  */
 app.post('/api/walkin', async (context) => {
   try {
@@ -140,6 +179,9 @@ app.post('/api/walkin', async (context) => {
     }
 
     const createdParticipant = await appendWalkinParticipant(context.env, body);
+
+    // 新規登録成功時にキャッシュを即座にクリア
+    clearParticipantsCache();
 
     return context.json<ApiResponse<typeof createdParticipant>>({
       success: true,

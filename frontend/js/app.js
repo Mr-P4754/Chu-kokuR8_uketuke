@@ -178,22 +178,21 @@ document.addEventListener('DOMContentLoaded', () => {
       await window.queueManager.processQueue();
     }
 
-    // 4. 定期自動ポーリングの設定（60秒に1回）
+    // 4. 定期自動ポーリングの設定（5秒に1回）
     startAutoPolling();
   }
 
   /**
-   * 60秒ごとの自動ポーリング
+   * 5秒ごとの自動ポーリング（バックエンドのインメモリキャッシュと連携）
    */
   let pollingIntervalId = null;
   function startAutoPolling() {
     if (pollingIntervalId) clearInterval(pollingIntervalId);
     pollingIntervalId = setInterval(async () => {
       if (state.isAuthenticated && navigator.onLine && !state.isFetching) {
-        console.log('[Auto Polling] 60秒定期同期を実行します...');
         await fetchParticipantsFromApi(true);
       }
-    }, 60000);
+    }, 5000);
   }
 
   /**
