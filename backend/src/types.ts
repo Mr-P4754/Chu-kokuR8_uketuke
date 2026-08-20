@@ -97,6 +97,7 @@ export interface WalkinRegistrationRequest {
   bentoOrdered?: boolean; // 弁当注文（当日受付時はデフォルトfalse）
   bentoConfirmed?: boolean; // 弁当引換確認（指定なし時はfalse）
   feePaid?: boolean; // 参加費事前支払（当日登録はfalse）
+  isWalkin?: boolean; // 当日受付フラグ（指定なし時はtrue）
   feeConfirmed?: boolean; // 参加費支払確認（指定なし時はfalse）
 }
 

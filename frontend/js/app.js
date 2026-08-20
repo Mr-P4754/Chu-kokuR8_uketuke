@@ -842,6 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function openDetailModal(participant) {
     state.selectedParticipant = participant;
     currentModalParticipantId = participant.id; // 現在開いている参加者IDをセット
+    state.isUpdatingStatus = false; // ★ 開いた瞬間にロックフラグを必ずリセット
     updateModalUI(participant);
 
     elements.detailModal?.classList.remove('hidden');
@@ -858,7 +859,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.toggleCheckinBtn) {
       elements.toggleCheckinBtn.disabled = false; // ★ 必ず操作可能状態に復帰
       if (participant.checkedIn) {
-        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
         elements.toggleCheckinBtn.innerHTML = `
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
           <span>受付済</span>
@@ -886,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.toggleBentoBtn.disabled = false;
         const isConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
         if (isConfirmed) {
-          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-indigo-600 text-white font-extrabold text-sm shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleBentoBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <span>弁当券引換済</span>
@@ -915,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // T列がFALSEの場合: ボタンが表示され、押すとX列（feeConfirmed）が更新される
         elements.toggleFeeBtn.disabled = false;
         if (participant.feeConfirmed) {
-          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleFeeBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <span>参加費受領済</span>
@@ -963,50 +964,56 @@ document.addEventListener('DOMContentLoaded', () => {
     buttons.forEach((btn) => {
       if (isLocked) {
         btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        btn.classList.add('opacity-60');
       } else {
-        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        btn.disabled = false;
+        btn.classList.remove('opacity-60');
       }
     });
   }
 
   /**
-   * ステータス更新トリガー（連打防止・排他制御付き）
+   * ステータス更新トリガー（連打防止 & 即時UI反映）
    */
   async function handleToggleStatus(field) {
-    // 1. 選択中の参加者がいない、または既に更新処理中の場合は即時リターン（多重実行ガード）
     if (!state.selectedParticipant || state.isUpdatingStatus) return;
 
     state.isUpdatingStatus = true;
-    setModalButtonsLock(true); // ★ ボタンを即時ロック（disabled + opacity-50 + pointer-events-none）
+    setModalButtonsLock(true);
+
+    // 安全装置: 最大2秒で必ずロック解除
+    const watchdogTimer = setTimeout(() => {
+      state.isUpdatingStatus = false;
+      if (state.selectedParticipant) {
+        updateModalToggleButtons(state.selectedParticipant);
+      }
+    }, 2000);
 
     try {
       const currentParticipant = state.selectedParticipant;
 
-      // 2. フィールドごとのトグル判定
+      // 1. フィールドごとのトグル判定
       if (field === 'checkedIn') {
         currentParticipant.checkedIn = !currentParticipant.checkedIn;
       } else if (field === 'bentoConfirmed') {
-        // 注文がない場合は何もしない
         if (!currentParticipant.bentoOrdered) return;
         const nextState = !(currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged);
         currentParticipant.bentoConfirmed = nextState;
         currentParticipant.bentoExchanged = nextState;
       } else if (field === 'feeConfirmed') {
-        // T列が事前支払済みの場合は何もしない
         if (currentParticipant.feePaid) return;
         currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
       }
 
-      // 3. モーダル内テキスト表示と全体統計の即時更新
+      // 2. モーダル内テキスト表示と全体統計の即時更新（楽観的UI更新）
       updateModalInfoDisplay(currentParticipant);
       updateStatistics();
       renderCurrentView();
 
-      // キャッシュの更新
+      // キャッシュの即時更新
       window.queueManager?.setCachedParticipants(state.participants);
 
-      // 更新ペイロード（T列 feePaid は変更せず維持、X列 feeConfirmed を更新）
+      // 更新ペイロード作成
       const payload = {
         id: currentParticipant.id,
         checkedIn: currentParticipant.checkedIn,
@@ -1015,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rowIndex: currentParticipant.rowIndex,
       };
 
-      // 4. 通信処理の確実な待機
+      // 3. 通信処理
       if (navigator.onLine) {
         try {
           const baseUrl = window.AppConfig?.apiBaseUrl || '';
@@ -1034,23 +1041,17 @@ document.addEventListener('DOMContentLoaded', () => {
             currentParticipant.updatedAt = result.data.updatedAt;
             if (elements.modalUpdatedAt) elements.modalUpdatedAt.textContent = result.data.updatedAt;
           }
-
-          // ★ 即時ポーリング通信の完了まで確実にawait待機
-          await fetchParticipantsFromApi(true);
         } catch (error) {
-          console.warn('[Update] API直接通信失敗のためオフラインキューへ退避:', error);
+          console.warn('[Update] API通信失敗のためオフラインキューへ退避:', error);
           window.queueManager?.enqueueUpdate(payload);
         }
       } else {
-        console.log('[Update] オフラインのためキューへ追加:', payload);
         window.queueManager?.enqueueUpdate(payload);
       }
     } finally {
-      // 5. 処理完了またはエラー時の確実なロック解除（finallyブロック）
+      clearTimeout(watchdogTimer);
       state.isUpdatingStatus = false;
-      setModalButtonsLock(false);
       if (state.selectedParticipant) {
-        // 各ボタン本来の有効/無効状態（事前注文なし、事前支払済等）を正確に復元
         updateModalToggleButtons(state.selectedParticipant);
       }
     }

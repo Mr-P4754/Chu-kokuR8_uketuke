@@ -455,7 +455,7 @@ export async function appendWalkinParticipant(
     checkedIn: payload.checkedIn !== undefined ? payload.checkedIn : false, // 当日登録の初期値は未受付（FALSE）
     bentoOrdered: payload.bentoOrdered || false,
     feePaid: payload.feePaid || false,
-    isWalkin: true, // 当日受付フラグは必ずTRUE
+    isWalkin: payload.isWalkin !== undefined ? payload.isWalkin : true,
     updatedAt: timestamp,
     bentoConfirmed: payload.bentoConfirmed || false,
     bentoExchanged: payload.bentoConfirmed || false,
@@ -484,7 +484,7 @@ export async function appendWalkinParticipant(
     newParticipant.checkedIn ? 'TRUE' : 'FALSE', // R [18]
     newParticipant.bentoOrdered ? 'TRUE' : 'FALSE', // S [19]
     newParticipant.feePaid ? 'TRUE' : 'FALSE', // T [20]
-    'TRUE', // U [21]
+    newParticipant.isWalkin ? 'TRUE' : 'FALSE', // U [21]
     newParticipant.updatedAt, // V [22]
     newParticipant.bentoConfirmed ? 'TRUE' : 'FALSE', // W [23]
     newParticipant.feeConfirmed ? 'TRUE' : 'FALSE', // X [24]
@@ -518,7 +518,7 @@ export async function appendWalkinParticipant(
  * デフォルトの学年選択肢
  */
 function getDefaultDesiredGrades(): string[] {
-  return ['第1学年', '第2学年', '第3学年', '第4学年', '第5学年', '第6学年', '全学年自由見学'];
+  return ['【A1】第4学年', '【A2】第5学年', '【A3】第6学年'];
 }
 
 /**
@@ -526,13 +526,10 @@ function getDefaultDesiredGrades(): string[] {
  */
 function getDefaultSubcommittees(): string[] {
   return [
-    '第1分科会（国語科）',
-    '第2分科会（社会科）',
-    '第3分科会（算数・数学科）',
-    '第4分科会（理科）',
-    '第5分科会（外国語・英語）',
-    '第6分科会（ICT活用・情報教育）',
-    '第7分科会（特別支援教育）',
+    '【B1】話すこと・聞くこと',
+    '【B2】書くこと',
+    '【B3】読むこと（文学）',
+    '【B4】読むこと（説明）',
   ];
 }
 
