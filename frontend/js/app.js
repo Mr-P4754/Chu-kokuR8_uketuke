@@ -226,12 +226,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCurrentView();
         updateLastSyncDisplay();
 
-        // モーダル表示中の場合、最新データでモーダル内DOMを直接上書き更新（リアクティブ化）
+        // モーダル表示中の場合、最新データでモーダル内の各ステータス情報表示とトグルボタンを直接上書き更新（リアクティブ化）
         if (currentModalParticipantId !== null) {
           const latestParticipant = state.participants.find((p) => p.id === currentModalParticipantId);
           if (latestParticipant) {
             state.selectedParticipant = latestParticipant;
-            updateModalUI(latestParticipant);
+            updateModalInfoDisplay(latestParticipant); // ステータス情報（テキスト・ラベル）のピンポイント更新
+            updateModalToggleButtons(latestParticipant); // 操作用トグルボタンのピンポイント更新
           }
         }
       }
@@ -694,43 +695,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * モーダル内の全DOM要素を最新の参加者データで直接上書き更新（部分レンダリング）
+   * モーダル内のステータス情報表示エリア（テキスト・バッジ等）を最新データでピンポイントDOM更新
    */
-  function updateModalUI(participant) {
+  function updateModalInfoDisplay(participant) {
     if (!participant) return;
 
-    if (elements.modalName) elements.modalName.textContent = `${participant.lastName} ${participant.firstName}`;
-    if (elements.modalKana) elements.modalKana.textContent = `${participant.lastNameKana} ${participant.firstNameKana}`;
-    if (elements.modalOrg) elements.modalOrg.textContent = participant.organization || '-';
-    if (elements.modalPosition) elements.modalPosition.textContent = participant.position || '-';
-    if (elements.modalId) elements.modalId.textContent = participant.id ? participant.id.substring(0, 8).toUpperCase() : '-';
-    if (elements.modalPhone) elements.modalPhone.textContent = [participant.phone1, participant.phone2, participant.phone3].filter(Boolean).join('-') || '-';
-    if (elements.modalEmail) elements.modalEmail.textContent = participant.email || '-';
-    if (elements.modalLocation) elements.modalLocation.textContent = participant.location || '-';
-    if (elements.modalTransport) elements.modalTransport.textContent = participant.transportation || '-';
-    if (elements.modalGrade) elements.modalGrade.textContent = participant.desiredGrade || '-';
-    if (elements.modalSub1) elements.modalSub1.textContent = participant.subcommittee1 || '-';
-    if (elements.modalSub2) elements.modalSub2.textContent = participant.subcommittee2 || '-';
-    if (elements.modalNotes) elements.modalNotes.textContent = participant.notes || 'なし';
-    if (elements.modalUpdatedAt) elements.modalUpdatedAt.textContent = participant.updatedAt || '-';
-
-    // モーダル内の詳細ステータス文字列表示
+    // 1. 受付状況（テキスト・色）
     if (elements.modalStatusCheckin) {
       elements.modalStatusCheckin.textContent = participant.checkedIn ? '受付済' : '未受付';
       elements.modalStatusCheckin.className = participant.checkedIn ? 'font-bold text-emerald-600' : 'font-bold text-slate-500';
     }
 
+    // 2. 弁当事前注文・引換状況（テキスト・色）
     if (elements.modalStatusBento) {
       if (!participant.bentoOrdered) {
         elements.modalStatusBento.textContent = 'なし';
         elements.modalStatusBento.className = 'font-bold text-slate-400';
       } else {
-        const isBentoConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
-        elements.modalStatusBento.textContent = isBentoConfirmed ? 'あり（引換済）' : 'あり（未引換）';
-        elements.modalStatusBento.className = isBentoConfirmed ? 'font-bold text-indigo-600' : 'font-bold text-amber-600';
+        const isConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
+        elements.modalStatusBento.textContent = isConfirmed ? 'あり（引換済）' : 'あり（未引換）';
+        elements.modalStatusBento.className = isConfirmed ? 'font-bold text-indigo-600' : 'font-bold text-amber-600';
       }
     }
 
+    // 3. 参加費状況（テキスト・色）
     if (elements.modalStatusFee) {
       if (participant.feePaid) {
         elements.modalStatusFee.textContent = '事前支払済';
@@ -744,6 +732,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // 4. 最終更新日時
+    if (elements.modalUpdatedAt) {
+      elements.modalUpdatedAt.textContent = participant.updatedAt || '-';
+    }
+
+    // 5. 当日受付バッジ
     if (elements.modalWalkinBadge) {
       if (participant.isWalkin) {
         elements.modalWalkinBadge.classList.remove('hidden');
@@ -751,8 +745,35 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.modalWalkinBadge.classList.add('hidden');
       }
     }
+  }
 
-    // トグルボタンの状態更新
+  /**
+   * モーダル内の全静的テキスト情報（氏名・所属・連絡先等）を更新
+   */
+  function updateModalStaticInfo(participant) {
+    if (!participant) return;
+    if (elements.modalName) elements.modalName.textContent = `${participant.lastName} ${participant.firstName}`;
+    if (elements.modalKana) elements.modalKana.textContent = `${participant.lastNameKana} ${participant.firstNameKana}`;
+    if (elements.modalOrg) elements.modalOrg.textContent = participant.organization || '-';
+    if (elements.modalPosition) elements.modalPosition.textContent = participant.position || '-';
+    if (elements.modalId) elements.modalId.textContent = participant.id ? participant.id.substring(0, 8).toUpperCase() : '-';
+    if (elements.modalPhone) elements.modalPhone.textContent = [participant.phone1, participant.phone2, participant.phone3].filter(Boolean).join('-') || '-';
+    if (elements.modalEmail) elements.modalEmail.textContent = participant.email || '-';
+    if (elements.modalLocation) elements.modalLocation.textContent = participant.location || '-';
+    if (elements.modalTransport) elements.modalTransport.textContent = participant.transportation || '-';
+    if (elements.modalGrade) elements.modalGrade.textContent = participant.desiredGrade || '-';
+    if (elements.modalSub1) elements.modalSub1.textContent = participant.subcommittee1 || '-';
+    if (elements.modalSub2) elements.modalSub2.textContent = participant.subcommittee2 || '-';
+    if (elements.modalNotes) elements.modalNotes.textContent = participant.notes || 'なし';
+  }
+
+  /**
+   * モーダル内の全DOM要素を最新の参加者データで更新
+   */
+  function updateModalUI(participant) {
+    if (!participant) return;
+    updateModalStaticInfo(participant);
+    updateModalInfoDisplay(participant);
     updateModalToggleButtons(participant);
   }
 
@@ -888,6 +909,8 @@ document.addEventListener('DOMContentLoaded', () => {
       currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
     }
 
+    // モーダル内のステータス情報表示とトグルボタンの両方を即時更新
+    updateModalInfoDisplay(currentParticipant);
     updateModalToggleButtons(currentParticipant);
     updateStatistics();
     renderCurrentView();
@@ -930,7 +953,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       console.log('[Update] オフラインのためキューへ追加:', payload);
       window.queueManager?.enqueueUpdate(payload);
-    }
   }
 
   elements.toggleCheckinBtn?.addEventListener('click', () => handleToggleStatus('checkedIn'));
