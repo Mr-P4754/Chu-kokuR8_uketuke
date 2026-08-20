@@ -5,6 +5,7 @@ import {
   updateParticipantStatus,
   appendWalkinParticipant,
   fetchFormOptions,
+  fetchSystemPassword,
 } from './googleSheets';
 import {
   EnvironmentVariables,
@@ -15,10 +16,10 @@ import {
   ApiResponse,
 } from './types';
 
-// Honoアプリケーションの初期化（環境変数バインディングの型を指定）
+// Honoアプリケーションの初期化
 const app = new Hono<{ Bindings: EnvironmentVariables }>();
 
-// CORSミドルウェアの設定（全オリジンまたは指定オリジンからのアクセスを許可）
+// CORSミドルウェアの設定
 app.use('*', async (context, next) => {
   const allowedOrigin = context.env.CORS_ORIGIN || '*';
   const corsMiddleware = cors({
@@ -43,15 +44,17 @@ app.get('/api/health', (context) => {
   });
 });
 
-// 参加者一覧インメモリキャッシュインターフェース (TTL: 5秒)
+// ==========================================
+// インメモリキャッシュ定義
+// ==========================================
+
+// 1. 参加者一覧キャッシュ (TTL: 5秒)
 interface ParticipantsCache {
   data: Participant[];
   timestamp: number;
 }
-
-// グローバルキャッシュ変数
 let cachedParticipants: ParticipantsCache | null = null;
-const CACHE_TTL_MS = 5000;
+const PARTICIPANTS_CACHE_TTL_MS = 5000;
 
 /**
  * 参加者一覧キャッシュを無効化（パージ）
@@ -60,17 +63,36 @@ function clearParticipantsCache(): void {
   cachedParticipants = null;
 }
 
+// 2. パスワードキャッシュ (TTL: 60秒)
+interface PasswordCache {
+  password: string;
+  timestamp: number;
+}
+let cachedPassword: PasswordCache | null = null;
+const PASSWORD_CACHE_TTL_MS = 60000;
+
+// 3. 選択肢マスタ用インメモリキャッシュ（TTL: 30秒）
+interface OptionsCache {
+  data: FormOptionsData;
+  timestamp: number;
+}
+let cachedOptions: OptionsCache | null = null;
+const OPTIONS_CACHE_TTL_MS = 30000;
+
+// ==========================================
+// APIエンドポイント
+// ==========================================
+
 /**
- * 1. 参加者一覧データ取得API
+ * 1. 参加者一覧データ取得API (TTL 5秒キャッシュ)
  * GET /api/participants
- * 5秒以内であればメモリキャッシュから返却、経過時はSheets APIから最新取得してキャッシュ更新
  */
 app.get('/api/participants', async (context) => {
   try {
     const now = Date.now();
 
-    // キャッシュが有効期間内（5秒以内）であればキャッシュデータを返却
-    if (cachedParticipants && (now - cachedParticipants.timestamp < CACHE_TTL_MS)) {
+    // 5秒以内の有効なキャッシュがあれば即座に返却
+    if (cachedParticipants && (now - cachedParticipants.timestamp < PARTICIPANTS_CACHE_TTL_MS)) {
       return context.json<ApiResponse<Participant[]>>({
         success: true,
         count: cachedParticipants.data.length,
@@ -78,10 +100,9 @@ app.get('/api/participants', async (context) => {
       });
     }
 
-    // Sheets APIから最新データを取得
+    // 5秒経過時はSheets APIから最新取得
     const participants = await fetchAllParticipants(context.env);
 
-    // キャッシュを更新
     cachedParticipants = {
       data: participants,
       timestamp: Date.now(),
@@ -95,40 +116,28 @@ app.get('/api/participants', async (context) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '参加者データの取得中にエラーが発生しました。';
     console.error('[API Error: GET /api/participants]', errorMessage);
-
-    return context.json<ApiResponse>(
-      {
-        success: false,
-        error: errorMessage,
-      },
-      500
-    );
+    return context.json<ApiResponse>({ success: false, error: errorMessage }, 500);
   }
 });
 
 /**
- * 2. 受付ステータス更新API
+ * 2. 受付ステータス更新API (キャッシュ即時パージ)
  * POST /api/update
- * 「受付状況」「弁当引換」「参加費支払」のフラグを更新し、成功時にキャッシュを無効化
  */
 app.post('/api/update', async (context) => {
   try {
     const body = await context.req.json<UpdateStatusRequest>();
 
-    // 必須パラメータの検証
     if (!body.id) {
       return context.json<ApiResponse>(
-        {
-          success: false,
-          error: 'システムID（id）が指定されていません。',
-        },
+        { success: false, error: 'システムID（id）が指定されていません。' },
         400
       );
     }
 
     const updatedData = await updateParticipantStatus(context.env, body);
 
-    // 更新成功時にキャッシュを即座にクリア
+    // 更新成功時にキャッシュを即座に破棄（パージ）
     clearParticipantsCache();
 
     return context.json<ApiResponse<typeof updatedData>>({
@@ -139,50 +148,28 @@ app.post('/api/update', async (context) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'ステータス更新中にエラーが発生しました。';
     console.error('[API Error: POST /api/update]', errorMessage);
-
-    return context.json<ApiResponse>(
-      {
-        success: false,
-        error: errorMessage,
-      },
-      500
-    );
+    return context.json<ApiResponse>({ success: false, error: errorMessage }, 500);
   }
 });
 
 /**
- * 3. 当日参加者新規登録API
+ * 3. 当日参加者新規登録API (キャッシュ即時パージ)
  * POST /api/walkin
- * 当日参加者フォームからの登録を受け付け、成功時にキャッシュを無効化
  */
 app.post('/api/walkin', async (context) => {
   try {
     const body = await context.req.json<WalkinRegistrationRequest>();
 
-    // 必須入力項目の簡易バリデーション
     if (!body.lastName || !body.firstName) {
-      return context.json<ApiResponse>(
-        {
-          success: false,
-          error: '氏名（姓・名）は必須項目です。',
-        },
-        400
-      );
+      return context.json<ApiResponse>({ success: false, error: '氏名は必須項目です。' }, 400);
     }
-
     if (!body.lastNameKana || !body.firstNameKana) {
-      return context.json<ApiResponse>(
-        {
-          success: false,
-          error: 'フリガナ（姓・名）は必須項目です。',
-        },
-        400
-      );
+      return context.json<ApiResponse>({ success: false, error: 'フリガナは必須項目です。' }, 400);
     }
 
     const createdParticipant = await appendWalkinParticipant(context.env, body);
 
-    // 新規登録成功時にキャッシュを即座にクリア
+    // 登録成功時にキャッシュを即座に破棄（パージ）
     clearParticipantsCache();
 
     return context.json<ApiResponse<typeof createdParticipant>>({
@@ -193,29 +180,13 @@ app.post('/api/walkin', async (context) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '当日参加者の登録中にエラーが発生しました。';
     console.error('[API Error: POST /api/walkin]', errorMessage);
-
-    return context.json<ApiResponse>(
-      {
-        success: false,
-        error: errorMessage,
-      },
-      500
-    );
+    return context.json<ApiResponse>({ success: false, error: errorMessage }, 500);
   }
 });
-
-// 選択肢マスタ用インメモリキャッシュ（TTL: 30秒）
-interface OptionsCache {
-  data: FormOptionsData;
-  timestamp: number;
-}
-let cachedOptions: OptionsCache | null = null;
-const OPTIONS_CACHE_TTL_MS = 30000;
 
 /**
  * 4. 選択肢マスタ取得API
  * GET /api/options
- * スプレッドシートの「選択肢マスタ」から学年・分科会の選択肢リストを取得して返却
  */
 app.get('/api/options', async (context) => {
   try {
@@ -228,11 +199,7 @@ app.get('/api/options', async (context) => {
     }
 
     const options = await fetchFormOptions(context.env);
-
-    cachedOptions = {
-      data: options,
-      timestamp: Date.now(),
-    };
+    cachedOptions = { data: options, timestamp: Date.now() };
 
     return context.json<ApiResponse<FormOptionsData>>({
       success: true,
@@ -241,38 +208,62 @@ app.get('/api/options', async (context) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '選択肢マスタの取得中にエラーが発生しました。';
     console.error('[API Error: GET /api/options]', errorMessage);
-
-    return context.json<ApiResponse>(
-      {
-        success: false,
-        error: errorMessage,
-      },
-      500
-    );
+    return context.json<ApiResponse>({ success: false, error: errorMessage }, 500);
   }
 });
 
-// 404 Not Found ハンドラー
-app.notFound((context) => {
-  return context.json<ApiResponse>(
-    {
-      success: false,
-      error: '指定されたエンドポイントは存在しません。',
-    },
-    404
-  );
+/**
+ * 5. スプレッドシート連動パスワード認証API (新設)
+ * POST /api/auth
+ */
+app.post('/api/auth', async (context) => {
+  try {
+    const body = await context.req.json<{ password?: string }>();
+    const inputPassword = (body.password || '').trim();
+
+    if (!inputPassword) {
+      return context.json<ApiResponse>(
+        { success: false, error: 'パスワードを入力してください。' },
+        400
+      );
+    }
+
+    // パスワードをキャッシュまたはスプレッドシートから取得
+    const now = Date.now();
+    let currentPassword = '1204';
+
+    if (cachedPassword && (now - cachedPassword.timestamp < PASSWORD_CACHE_TTL_MS)) {
+      currentPassword = cachedPassword.password;
+    } else {
+      currentPassword = await fetchSystemPassword(context.env);
+      cachedPassword = { password: currentPassword, timestamp: Date.now() };
+    }
+
+    // パスワード照合
+    if (inputPassword === currentPassword) {
+      return context.json<ApiResponse<{ authenticated: boolean }>>({
+        success: true,
+        message: '認証に成功しました。',
+        data: { authenticated: true },
+      });
+    } else {
+      return context.json<ApiResponse>(
+        { success: false, error: 'パスワードが正しくありません。' },
+        401
+      );
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '認証処理中にエラーが発生しました。';
+    console.error('[API Error: POST /api/auth]', errorMessage);
+    return context.json<ApiResponse>({ success: false, error: errorMessage }, 500);
+  }
 });
 
-// グローバルエラーハンドラー
+// 404 & エラーハンドラー
+app.notFound((context) => context.json<ApiResponse>({ success: false, error: '指定されたエンドポイントは存在しません。' }, 404));
 app.onError((error, context) => {
   console.error('[Unhandled Error]', error);
-  return context.json<ApiResponse>(
-    {
-      success: false,
-      error: error.message || '予期せぬ内部エラーが発生しました。',
-    },
-    500
-  );
+  return context.json<ApiResponse>({ success: false, error: error.message || '内部エラーが発生しました。' }, 500);
 });
 
 export default app;

@@ -147,17 +147,68 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') handleAuthSubmit();
   });
 
-  function handleAuthSubmit() {
+  /**
+   * パスワード認証の送信処理（バックエンド POST /api/auth 連携）
+   */
+  async function handleAuthSubmit() {
     const inputPass = elements.authPasswordInput.value.trim();
-    if (inputPass === state.authPassword) {
-      sessionStorage.setItem(window.AppConfig?.authStorageKey || 'reception_auth_token', 'authorized');
-      state.isAuthenticated = true;
-      elements.authModal?.classList.add('hidden');
-      elements.authErrorText?.classList.add('hidden');
-      loadInitialData();
-    } else {
-      elements.authErrorText?.classList.remove('hidden');
+    if (!inputPass) {
+      if (elements.authErrorText) {
+        elements.authErrorText.textContent = '※ パスワードを入力してください。';
+        elements.authErrorText.classList.remove('hidden');
+      }
       elements.authPasswordInput.focus();
+      return;
+    }
+
+    if (elements.authSubmitButton) {
+      elements.authSubmitButton.disabled = true;
+      elements.authSubmitButton.textContent = '認証中...';
+    }
+    if (elements.authErrorText) elements.authErrorText.classList.add('hidden');
+
+    const baseUrl = window.AppConfig?.apiBaseUrl || '';
+    try {
+      const response = await fetch(`${baseUrl}/api/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: inputPass }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        sessionStorage.setItem(window.AppConfig?.authStorageKey || 'reception_auth_token', 'authorized');
+        state.isAuthenticated = true;
+        elements.authModal?.classList.add('hidden');
+        loadInitialData();
+      } else {
+        if (elements.authErrorText) {
+          elements.authErrorText.textContent = result.error || '※ パスワードが正しくありません。';
+          elements.authErrorText.classList.remove('hidden');
+        }
+        elements.authPasswordInput.focus();
+      }
+    } catch (error) {
+      console.warn('[Auth Warning] API認証通信エラー:', error);
+      // オフラインまたは通信障害時フォールバック（デフォルトパスワード 1204 / reception2026）
+      if (inputPass === '1204' || inputPass === 'reception2026') {
+        sessionStorage.setItem(window.AppConfig?.authStorageKey || 'reception_auth_token', 'authorized');
+        state.isAuthenticated = true;
+        elements.authModal?.classList.add('hidden');
+        loadInitialData();
+      } else {
+        if (elements.authErrorText) {
+          elements.authErrorText.textContent = '※ 認証に失敗しました。パスワードを確認してください。';
+          elements.authErrorText.classList.remove('hidden');
+        }
+        elements.authPasswordInput.focus();
+      }
+    } finally {
+      if (elements.authSubmitButton) {
+        elements.authSubmitButton.disabled = false;
+        elements.authSubmitButton.textContent = '認証して開始';
+      }
     }
   }
 
@@ -649,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div data-id="${participant.id}"
-        class="participant-card touch-target bg-white rounded-xl border ${isCheckedIn ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200'} p-3 shadow-xs hover:shadow-md active:scale-[0.99] transition cursor-pointer flex flex-col justify-between">
+        class="participant-card touch-target bg-white rounded-xl border ${isCheckedIn ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200'} p-2.5 shadow-xs hover:shadow-md active:scale-[0.99] transition cursor-pointer flex flex-col justify-between">
         <div>
           <div class="flex items-center justify-between mb-0.5">
             <span class="text-[11px] font-semibold text-slate-400 truncate">
@@ -658,16 +709,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ${isWalkin ? '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">当日</span>' : ''}
           </div>
 
-          <h3 class="text-base sm:text-lg font-black text-slate-900 leading-tight mb-1 truncate">
+          <h3 class="text-base sm:text-lg font-black text-slate-900 leading-tight mb-0.5 truncate">
             ${participant.lastName} ${participant.firstName}
           </h3>
 
-          <p class="text-xs font-medium text-slate-600 truncate mb-2">
+          <p class="text-xs font-medium text-slate-600 truncate mb-1.5">
             ${participant.organization || '-'}
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1 pt-2 border-t border-slate-100">
+        <div class="flex flex-wrap items-center gap-1 pt-1.5 border-t border-slate-100">
           <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isCheckedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
             ${isCheckedIn ? '受付済' : '未受付'}
           </span>
@@ -946,6 +997,9 @@ document.addEventListener('DOMContentLoaded', () => {
           currentParticipant.updatedAt = result.data.updatedAt;
           if (elements.modalUpdatedAt) elements.modalUpdatedAt.textContent = result.data.updatedAt;
         }
+
+        // ★ ステータス更新成功直後に最新データを即時取得して全画面に反映
+        await fetchParticipantsFromApi(true);
       } catch (error) {
         console.warn('[Update] API直接通信失敗のためオフラインキューへ退避:', error);
         window.queueManager?.enqueueUpdate(payload);
@@ -953,6 +1007,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       console.log('[Update] オフラインのためキューへ追加:', payload);
       window.queueManager?.enqueueUpdate(payload);
+    }
   }
 
   elements.toggleCheckinBtn?.addEventListener('click', () => handleToggleStatus('checkedIn'));

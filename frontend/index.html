@@ -45,7 +45,7 @@
       <div class="space-y-4 text-left">
         <div>
           <label for="authPasswordInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">パスワード</label>
-          <input type="password" id="authPasswordInput" placeholder="パスワードを入力" value="reception2026"
+          <input type="password" id="authPasswordInput" placeholder="パスワードを入力" value="1204"
             class="w-full touch-target px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 font-medium">
         </div>
         <p id="authErrorText" class="hidden text-xs font-bold text-rose-600">※ パスワードが正しくありません。</p>
@@ -72,37 +72,36 @@
         </div>
       </div>
 
-      <!-- 右側アクション（オンライン状態、同期ボタン、当日受付リンク） -->
-      <div class="flex items-center space-x-3 sm:space-x-4">
-        <!-- オンライン・オフライン表示 -->
-        <div class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
-          <span id="onlineStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span id="onlineStatusText">オンライン</span>
+      <!-- 右側アクション（最終同期時刻、同期ボタン、当日受付リンク） -->
+      <div class="flex items-center space-x-2.5 sm:space-x-3">
+        <!-- 最終同期時刻表示（オンライン表示のあった位置に移動） -->
+        <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 text-xs font-semibold text-slate-600">
+          <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span id="lastSyncText">未同期</span>
         </div>
 
         <!-- データ同期ボタン -->
-        <div class="flex flex-col items-end">
-          <button type="button" id="syncButton"
-            class="touch-target px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs sm:text-sm shadow-sm flex items-center space-x-2 active:scale-95 transition">
-            <svg id="syncSpinner" class="hidden animate-spin h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span>データ同期</span>
-          </button>
-          <span id="lastSyncText" class="text-[10px] text-slate-400 mt-0.5">未同期</span>
-        </div>
+        <button type="button" id="syncButton"
+          class="touch-target px-3.5 sm:px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 active:scale-95 transition">
+          <svg id="syncSpinner" class="hidden animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>同期</span>
+        </button>
 
         <!-- 当日受付フォームへのクイックリンク -->
         <a href="./walkin.html" target="_blank"
-          class="touch-target px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs sm:text-sm flex items-center space-x-1.5 transition">
+          class="touch-target px-3 sm:px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs sm:text-sm flex items-center space-x-1.5 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          <span class="hidden sm:inline">当日受付フォーム</span>
+          <span class="hidden sm:inline">当日受付</span>
         </a>
       </div>
     </div>

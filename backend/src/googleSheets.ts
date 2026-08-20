@@ -616,3 +616,47 @@ export async function fetchFormOptions(env: EnvironmentVariables): Promise<FormO
     };
   }
 }
+
+/**
+ * 設定マスタシートからシステムパスワードを取得
+ */
+export async function fetchSystemPassword(env: EnvironmentVariables): Promise<string> {
+  const token = await getGoogleAccessToken(
+    env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    env.GOOGLE_PRIVATE_KEY
+  );
+
+  const sheetName = '設定マスタ';
+  const spreadsheetId = extractSpreadsheetId(env.GOOGLE_SPREADSHEET_ID);
+  const range = encodeURIComponent(`'${sheetName}'!A2:B`);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
+
+  try {
+    const response = await fetchWithExponentialBackoff(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.warn(`[Settings Warning] 設定マスタの取得に失敗したためデフォルトパスワードを使用します (${response.status})`);
+      return env.AUTH_PASSWORD || '1204';
+    }
+
+    const result = (await response.json()) as { values?: string[][] };
+    const rows = result.values || [];
+
+    for (const row of rows) {
+      if (!row || row.length < 2) continue;
+      const key = String(row[0] || '').trim();
+      const val = String(row[1] || '').trim();
+      if (key === 'システムパスワード' || key === 'パスワード' || key.toLowerCase() === 'password') {
+        if (val) return val;
+      }
+    }
+
+    return env.AUTH_PASSWORD || '1204';
+  } catch (error) {
+    console.error('[Settings Error]', error);
+    return env.AUTH_PASSWORD || '1204';
+  }
+}
