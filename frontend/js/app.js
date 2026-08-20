@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     isAuthenticated: false, // 簡易認証フラグ
     authPassword: 'reception2026', // デフォルト簡易認証パスワード
     isFetching: false, // データ取得中フラグ
+    isUpdatingStatus: false, // ステータス更新中フラグ（連打防止・排他制御用）
   };
 
   // DOM要素の取得
@@ -939,74 +940,108 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
-   * ステータス更新トリガー
+   * モーダル内操作ボタンの排他ロック・解除制御（連打防止用）
+   */
+  function setModalButtonsLock(isLocked) {
+    const buttons = [
+      elements.toggleCheckinBtn,
+      elements.toggleBentoBtn,
+      elements.toggleFeeBtn,
+    ].filter(Boolean);
+
+    buttons.forEach((btn) => {
+      if (isLocked) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+      } else {
+        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+      }
+    });
+  }
+
+  /**
+   * ステータス更新トリガー（連打防止・排他制御付き）
    */
   async function handleToggleStatus(field) {
-    if (!state.selectedParticipant) return;
+    // 1. 選択中の参加者がいない、または既に更新処理中の場合は即時リターン（多重実行ガード）
+    if (!state.selectedParticipant || state.isUpdatingStatus) return;
 
-    const currentParticipant = state.selectedParticipant;
+    state.isUpdatingStatus = true;
+    setModalButtonsLock(true); // ★ ボタンを即時ロック（disabled + opacity-50 + pointer-events-none）
 
-    if (field === 'checkedIn') {
-      currentParticipant.checkedIn = !currentParticipant.checkedIn;
-    } else if (field === 'bentoConfirmed') {
-      // 注文がない場合は何もしない
-      if (!currentParticipant.bentoOrdered) return;
-      const nextState = !(currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged);
-      currentParticipant.bentoConfirmed = nextState;
-      currentParticipant.bentoExchanged = nextState;
-    } else if (field === 'feeConfirmed') {
-      // T列が事前支払済みの場合は何もしない
-      if (currentParticipant.feePaid) return;
-      currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
-    }
+    try {
+      const currentParticipant = state.selectedParticipant;
 
-    // モーダル内のステータス情報表示とトグルボタンの両方を即時更新
-    updateModalInfoDisplay(currentParticipant);
-    updateModalToggleButtons(currentParticipant);
-    updateStatistics();
-    renderCurrentView();
+      // 2. フィールドごとのトグル判定
+      if (field === 'checkedIn') {
+        currentParticipant.checkedIn = !currentParticipant.checkedIn;
+      } else if (field === 'bentoConfirmed') {
+        // 注文がない場合は何もしない
+        if (!currentParticipant.bentoOrdered) return;
+        const nextState = !(currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged);
+        currentParticipant.bentoConfirmed = nextState;
+        currentParticipant.bentoExchanged = nextState;
+      } else if (field === 'feeConfirmed') {
+        // T列が事前支払済みの場合は何もしない
+        if (currentParticipant.feePaid) return;
+        currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
+      }
 
-    // キャッシュの更新
-    window.queueManager?.setCachedParticipants(state.participants);
+      // 3. モーダル内テキスト表示と全体統計の即時更新
+      updateModalInfoDisplay(currentParticipant);
+      updateStatistics();
+      renderCurrentView();
 
-    // 更新ペイロード（T列 feePaid は変更せず維持、X列 feeConfirmed を更新）
-    const payload = {
-      id: currentParticipant.id,
-      checkedIn: currentParticipant.checkedIn,
-      bentoConfirmed: currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged,
-      feeConfirmed: currentParticipant.feeConfirmed,
-      rowIndex: currentParticipant.rowIndex,
-    };
+      // キャッシュの更新
+      window.queueManager?.setCachedParticipants(state.participants);
 
-    // オンラインであればAPI送信、失敗またはオフライン時はキューに追加
-    if (navigator.onLine) {
-      try {
-        const baseUrl = window.AppConfig?.apiBaseUrl || '';
-        const response = await fetch(`${baseUrl}/api/update`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+      // 更新ペイロード（T列 feePaid は変更せず維持、X列 feeConfirmed を更新）
+      const payload = {
+        id: currentParticipant.id,
+        checkedIn: currentParticipant.checkedIn,
+        bentoConfirmed: currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged,
+        feeConfirmed: currentParticipant.feeConfirmed,
+        rowIndex: currentParticipant.rowIndex,
+      };
 
-        if (!response.ok) {
-          throw new Error('API更新失敗');
+      // 4. 通信処理の確実な待機
+      if (navigator.onLine) {
+        try {
+          const baseUrl = window.AppConfig?.apiBaseUrl || '';
+          const response = await fetch(`${baseUrl}/api/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            throw new Error('API更新失敗');
+          }
+
+          const result = await response.json();
+          if (result.success && result.data?.updatedAt) {
+            currentParticipant.updatedAt = result.data.updatedAt;
+            if (elements.modalUpdatedAt) elements.modalUpdatedAt.textContent = result.data.updatedAt;
+          }
+
+          // ★ 即時ポーリング通信の完了まで確実にawait待機
+          await fetchParticipantsFromApi(true);
+        } catch (error) {
+          console.warn('[Update] API直接通信失敗のためオフラインキューへ退避:', error);
+          window.queueManager?.enqueueUpdate(payload);
         }
-
-        const result = await response.json();
-        if (result.success && result.data?.updatedAt) {
-          currentParticipant.updatedAt = result.data.updatedAt;
-          if (elements.modalUpdatedAt) elements.modalUpdatedAt.textContent = result.data.updatedAt;
-        }
-
-        // ★ ステータス更新成功直後に最新データを即時取得して全画面に反映
-        await fetchParticipantsFromApi(true);
-      } catch (error) {
-        console.warn('[Update] API直接通信失敗のためオフラインキューへ退避:', error);
+      } else {
+        console.log('[Update] オフラインのためキューへ追加:', payload);
         window.queueManager?.enqueueUpdate(payload);
       }
-    } else {
-      console.log('[Update] オフラインのためキューへ追加:', payload);
-      window.queueManager?.enqueueUpdate(payload);
+    } finally {
+      // 5. 処理完了またはエラー時の確実なロック解除（finallyブロック）
+      state.isUpdatingStatus = false;
+      setModalButtonsLock(false);
+      if (state.selectedParticipant) {
+        // 各ボタン本来の有効/無効状態（事前注文なし、事前支払済等）を正確に復元
+        updateModalToggleButtons(state.selectedParticipant);
+      }
     }
   }
 
