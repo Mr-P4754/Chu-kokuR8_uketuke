@@ -852,16 +852,19 @@ document.addEventListener('DOMContentLoaded', () => {
    * モーダル内トグルボタンの表示状態更新
    */
   function updateModalToggleButtons(participant) {
+    if (!participant) return;
+
     // 1. 受付状況 (R列)
     if (elements.toggleCheckinBtn) {
+      elements.toggleCheckinBtn.disabled = false; // ★ 必ず操作可能状態に復帰
       if (participant.checkedIn) {
-        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
         elements.toggleCheckinBtn.innerHTML = `
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
           <span>受付済</span>
         `;
       } else {
-        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
         elements.toggleCheckinBtn.innerHTML = `
           <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
           <span>未受付</span>
@@ -883,13 +886,13 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.toggleBentoBtn.disabled = false;
         const isConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
         if (isConfirmed) {
-          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-indigo-600 text-white font-extrabold text-sm shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-indigo-600 text-white font-extrabold text-sm shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleBentoBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <span>弁当券引換済</span>
           `;
         } else {
-          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleBentoBtn.innerHTML = `
             <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
             <span>弁当券未引換</span>
@@ -912,13 +915,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // T列がFALSEの場合: ボタンが表示され、押すとX列（feeConfirmed）が更新される
         elements.toggleFeeBtn.disabled = false;
         if (participant.feeConfirmed) {
-          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleFeeBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <span>参加費受領済</span>
           `;
         } else {
-          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleFeeBtn.innerHTML = `
             <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
             <span>未受領</span>
@@ -936,6 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.remove('overflow-hidden');
     state.selectedParticipant = null;
     currentModalParticipantId = null; // 表示中IDをnullにリセット
+    state.isUpdatingStatus = false; // ロックフラグも安全にリセット
   }
 
   elements.modalCloseButton?.addEventListener('click', closeDetailModal);
