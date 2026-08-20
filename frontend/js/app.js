@@ -79,6 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
     modalWalkinBadge: document.getElementById('modalWalkinBadge'),
     modalUpdatedAt: document.getElementById('modalUpdatedAt'),
 
+    // モーダル内ステータス詳細表示
+    modalStatusCheckin: document.getElementById('modalStatusCheckin'),
+    modalStatusBento: document.getElementById('modalStatusBento'),
+    modalStatusFee: document.getElementById('modalStatusFee'),
+
     // モーダル内ステータストグルボタン
     toggleCheckinBtn: document.getElementById('toggleCheckinBtn'),
     toggleBentoBtn: document.getElementById('toggleBentoBtn'),
@@ -149,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadInitialData();
     } else {
       elements.authErrorText?.classList.remove('hidden');
-      elements.authPasswordInput?.focus();
+      elements.authPasswordInput.focus();
     }
   }
 
@@ -172,15 +177,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.queueManager) {
       await window.queueManager.processQueue();
     }
+
+    // 4. 定期自動ポーリングの設定（60秒に1回）
+    startAutoPolling();
+  }
+
+  /**
+   * 60秒ごとの自動ポーリング
+   */
+  let pollingIntervalId = null;
+  function startAutoPolling() {
+    if (pollingIntervalId) clearInterval(pollingIntervalId);
+    pollingIntervalId = setInterval(async () => {
+      if (state.isAuthenticated && navigator.onLine && !state.isFetching) {
+        console.log('[Auto Polling] 60秒定期同期を実行します...');
+        await fetchParticipantsFromApi(true);
+      }
+    }, 60000);
   }
 
   /**
    * 参加者一覧をAPIからフェッチ
    */
-  async function fetchParticipantsFromApi() {
+  async function fetchParticipantsFromApi(silent = false) {
     if (state.isFetching) return;
     state.isFetching = true;
-    updateSyncButtonState(true);
+    if (!silent) updateSyncButtonState(true);
 
     const baseUrl = window.AppConfig?.apiBaseUrl || '';
     try {
@@ -206,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('[Fetch Warning] 最新データの取得に失敗しました（キャッシュデータを使用します）:', error);
     } finally {
       state.isFetching = false;
-      updateSyncButtonState(false);
+      if (!silent) updateSyncButtonState(false);
     }
   }
 
@@ -248,7 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 弁当事前注文者数と引換済数
     const bentoOrderedTotal = state.participants.filter((p) => p.bentoOrdered).length;
     const bentoConfirmed = state.participants.filter((p) => p.bentoOrdered && (p.bentoConfirmed || p.bentoExchanged)).length;
-    const fee = state.participants.filter((p) => p.feePaid).length;
+    // 参加費受領済（事前支払 または 当日受領）
+    const fee = state.participants.filter((p) => p.feePaid || p.feeConfirmed).length;
     const walkin = state.participants.filter((p) => p.isWalkin).length;
 
     const percent = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
@@ -299,14 +322,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function switchTab(tab) {
     state.currentTab = tab;
     if (tab === 'search') {
-      elements.tabSearch.className = 'touch-target py-3 px-6 text-sm sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2';
-      elements.tabList.className = 'touch-target py-3 px-6 text-sm sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2';
+      elements.tabSearch.className = 'touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2';
+      elements.tabList.className = 'touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2';
       elements.searchSection?.classList.remove('hidden');
       elements.listSection?.classList.add('hidden');
       setTimeout(() => elements.searchInput?.focus(), 50);
     } else {
-      elements.tabSearch.className = 'touch-target py-3 px-6 text-sm sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2';
-      elements.tabList.className = 'touch-target py-3 px-6 text-sm sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2';
+      elements.tabSearch.className = 'touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2';
+      elements.tabList.className = 'touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2';
       elements.searchSection?.classList.add('hidden');
       elements.listSection?.classList.remove('hidden');
     }
@@ -406,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 検索結果の描画（カード形式）
+   * 検索結果の描画（コンパクトなカード形式）
    */
   function renderSearchResults() {
     if (!elements.searchResultsContainer) return;
@@ -414,12 +437,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!query) {
       elements.searchResultsContainer.innerHTML = `
-        <div class="col-span-full py-16 text-center text-slate-400">
-          <svg class="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="col-span-full py-12 text-center text-slate-400">
+          <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <p class="text-base font-semibold text-slate-600">参加者を検索</p>
-          <p class="text-xs text-slate-400 mt-1">姓・名（フリガナ）、氏名（漢字）、所属名を入力してください</p>
+          <p class="text-sm font-bold text-slate-600">参加者を検索</p>
+          <p class="text-xs text-slate-400 mt-0.5">姓・名（フリガナ）、氏名（漢字）、所属名を入力してください</p>
         </div>
       `;
       if (elements.searchResultCount) elements.searchResultCount.textContent = '0件';
@@ -431,12 +454,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (matches.length === 0) {
       elements.searchResultsContainer.innerHTML = `
-        <div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 p-6">
-          <p class="text-base font-bold text-slate-700">該当する参加者が見つかりませんでした</p>
-          <p class="text-xs text-slate-500 mt-1">「${query}」に一致するデータはありません。</p>
-          <div class="mt-4">
-            <a href="./walkin.html" class="inline-flex items-center px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs border border-indigo-200 transition">
-              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="col-span-full py-10 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 p-5">
+          <p class="text-sm font-bold text-slate-700">該当する参加者が見つかりませんでした</p>
+          <p class="text-xs text-slate-500 mt-0.5">「${query}」に一致するデータはありません。</p>
+          <div class="mt-3">
+            <a href="./walkin.html" class="inline-flex items-center px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs border border-indigo-200 transition">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
               当日参加受付フォームを開く
@@ -447,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    elements.searchResultsContainer.innerHTML = matches.map((p) => createParticipantCardHtml(p)).join('');
+    elements.searchResultsContainer.innerHTML = matches.map((p) => createCompactParticipantCardHtml(p)).join('');
     attachRowClickListeners(elements.searchResultsContainer, '.participant-card');
   }
 
@@ -473,7 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
         list = list.filter((p) => p.bentoOrdered && !(p.bentoConfirmed || p.bentoExchanged));
         break;
       case 'fee_pending':
-        list = list.filter((p) => !p.feePaid);
+        // 事前支払でも当日受領でもない人
+        list = list.filter((p) => !p.feePaid && !p.feeConfirmed);
         break;
     }
 
@@ -521,7 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCheckedIn = participant.checkedIn;
     const isBentoOrdered = participant.bentoOrdered;
     const isBentoConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
-    const isFee = participant.feePaid;
+    const isFeePaid = participant.feePaid;
+    const isFeeConfirmed = participant.feeConfirmed;
     const isWalkin = participant.isWalkin;
 
     // 弁当引換ステータスバッジ
@@ -532,6 +557,16 @@ document.addEventListener('DOMContentLoaded', () => {
       bentoBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200">引換済</span>';
     } else {
       bentoBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200">未引換</span>';
+    }
+
+    // 参加費ステータスバッジ
+    let feeBadgeHtml = '';
+    if (isFeePaid) {
+      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-violet-100 text-violet-800 border border-violet-300">事前支払済</span>';
+    } else if (isFeeConfirmed) {
+      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">当日受領済</span>';
+    } else {
+      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500">未受領</span>';
     }
 
     return `
@@ -555,9 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${bentoBadgeHtml}
         </td>
         <td class="py-3.5 px-3 sm:px-4 text-center">
-          <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${isFee ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-slate-100 text-slate-500'}">
-            ${isFee ? '支払済' : '未受領'}
-          </span>
+          ${feeBadgeHtml}
         </td>
         <td class="py-3.5 px-3 sm:px-4 text-center">
           ${isWalkin 
@@ -573,52 +606,60 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 検索用カードHTML生成
+   * 検索用 コンパクトカードHTML生成（余白を削り小さく最適化）
    */
-  function createParticipantCardHtml(participant) {
+  function createCompactParticipantCardHtml(participant) {
     const isCheckedIn = participant.checkedIn;
     const isBentoOrdered = participant.bentoOrdered;
     const isBentoConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
-    const isFee = participant.feePaid;
+    const isFeePaid = participant.feePaid;
+    const isFeeConfirmed = participant.feeConfirmed;
     const isWalkin = participant.isWalkin;
 
     let bentoBadge = '';
     if (!isBentoOrdered) {
-      bentoBadge = '<span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-400">弁当: 注文無</span>';
+      bentoBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-400">弁当無</span>';
     } else if (isBentoConfirmed) {
-      bentoBadge = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-300">弁当引換済</span>';
+      bentoBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">弁当済</span>';
     } else {
-      bentoBadge = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">弁当未引換</span>';
+      bentoBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">弁当未</span>';
+    }
+
+    let feeBadge = '';
+    if (isFeePaid) {
+      feeBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-100 text-violet-800 border border-violet-200">支払済</span>';
+    } else if (isFeeConfirmed) {
+      feeBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">受領済</span>';
+    } else {
+      feeBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500">未受領</span>';
     }
 
     return `
       <div data-id="${participant.id}"
-        class="participant-card touch-target bg-white rounded-2xl border ${isCheckedIn ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200'} p-4 sm:p-5 shadow-sm hover:shadow-md active:scale-[0.99] transition cursor-pointer flex flex-col justify-between">
+        class="participant-card touch-target bg-white rounded-xl border ${isCheckedIn ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200'} p-3 shadow-xs hover:shadow-md active:scale-[0.99] transition cursor-pointer flex flex-col justify-between">
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-semibold text-slate-500 tracking-wide">
+          <div class="flex items-center justify-between mb-0.5">
+            <span class="text-[11px] font-semibold text-slate-400 truncate">
               ${participant.lastNameKana} ${participant.firstNameKana}
             </span>
-            ${isWalkin ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">当日</span>' : ''}
+            ${isWalkin ? '<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">当日</span>' : ''}
           </div>
 
-          <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight mb-1">
+          <h3 class="text-base sm:text-lg font-black text-slate-900 leading-tight mb-1 truncate">
             ${participant.lastName} ${participant.firstName}
           </h3>
 
-          <p class="text-sm font-medium text-slate-600 truncate mb-3">
-            ${participant.organization || '所属なし'} <span class="text-slate-400 font-normal">/ ${participant.position || '-'}</span>
+          <p class="text-xs font-medium text-slate-600 truncate mb-2">
+            ${participant.organization || '-'}
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1.5 pt-3 border-t border-slate-100">
-          <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isCheckedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
+        <div class="flex flex-wrap items-center gap-1 pt-2 border-t border-slate-100">
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isCheckedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
             ${isCheckedIn ? '受付済' : '未受付'}
           </span>
           ${bentoBadge}
-          <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isFee ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-slate-100 text-slate-500'}">
-            ${isFee ? '支払済' : '未受領'}
-          </span>
+          ${feeBadge}
         </div>
       </div>
     `;
@@ -661,6 +702,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.modalNotes) elements.modalNotes.textContent = participant.notes || 'なし';
     if (elements.modalUpdatedAt) elements.modalUpdatedAt.textContent = participant.updatedAt || '-';
 
+    // モーダル内の詳細ステータス文字列表示
+    if (elements.modalStatusCheckin) {
+      elements.modalStatusCheckin.textContent = participant.checkedIn ? '受付済' : '未受付';
+      elements.modalStatusCheckin.className = participant.checkedIn ? 'font-bold text-emerald-600' : 'font-bold text-slate-500';
+    }
+
+    if (elements.modalStatusBento) {
+      if (!participant.bentoOrdered) {
+        elements.modalStatusBento.textContent = 'なし';
+        elements.modalStatusBento.className = 'font-bold text-slate-400';
+      } else {
+        const isBentoConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
+        elements.modalStatusBento.textContent = isBentoConfirmed ? 'あり（引換済）' : 'あり（未引換）';
+        elements.modalStatusBento.className = isBentoConfirmed ? 'font-bold text-indigo-600' : 'font-bold text-amber-600';
+      }
+    }
+
+    if (elements.modalStatusFee) {
+      if (participant.feePaid) {
+        elements.modalStatusFee.textContent = '事前支払済';
+        elements.modalStatusFee.className = 'font-bold text-violet-600';
+      } else if (participant.feeConfirmed) {
+        elements.modalStatusFee.textContent = '当日受領済';
+        elements.modalStatusFee.className = 'font-bold text-emerald-600';
+      } else {
+        elements.modalStatusFee.textContent = '未受領';
+        elements.modalStatusFee.className = 'font-bold text-slate-500';
+      }
+    }
+
     if (elements.modalWalkinBadge) {
       if (participant.isWalkin) {
         elements.modalWalkinBadge.classList.remove('hidden');
@@ -678,21 +749,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * モーダル内トグルボタンの表示状態更新
-   * （タップで受付などの補足表記を廃止し、シンプルに表現）
    */
   function updateModalToggleButtons(participant) {
     // 1. 受付状況 (R列)
     if (elements.toggleCheckinBtn) {
       if (participant.checkedIn) {
-        elements.toggleCheckinBtn.className = 'touch-target py-3.5 px-4 rounded-xl bg-emerald-600 text-white font-extrabold text-base shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-2';
+        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
         elements.toggleCheckinBtn.innerHTML = `
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
           <span>受付済</span>
         `;
       } else {
-        elements.toggleCheckinBtn.className = 'touch-target py-3.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-base border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-2';
+        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
         elements.toggleCheckinBtn.innerHTML = `
-          <span class="w-3.5 h-3.5 rounded-full border-2 border-slate-400"></span>
+          <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
           <span>未受付</span>
         `;
       }
@@ -703,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!participant.bentoOrdered) {
         // 事前注文なしの場合は無効化表示
         elements.toggleBentoBtn.disabled = true;
-        elements.toggleBentoBtn.className = 'touch-target py-3.5 px-4 rounded-xl bg-slate-50 text-slate-400 font-bold text-sm border border-dashed border-slate-300 cursor-not-allowed flex items-center justify-center space-x-1.5';
+        elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs border border-dashed border-slate-300 cursor-not-allowed flex items-center justify-center';
         elements.toggleBentoBtn.innerHTML = `
           <span>弁当注文なし</span>
         `;
@@ -712,35 +782,47 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.toggleBentoBtn.disabled = false;
         const isConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
         if (isConfirmed) {
-          elements.toggleBentoBtn.className = 'touch-target py-3.5 px-4 rounded-xl bg-indigo-600 text-white font-extrabold text-base shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-2';
+          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-indigo-600 text-white font-extrabold text-sm shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
           elements.toggleBentoBtn.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <span>弁当券引換済</span>
           `;
         } else {
-          elements.toggleBentoBtn.className = 'touch-target py-3.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-base border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-2';
+          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
           elements.toggleBentoBtn.innerHTML = `
-            <span class="w-3.5 h-3.5 rounded-full border-2 border-slate-400"></span>
+            <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
             <span>弁当券未引換</span>
           `;
         }
       }
     }
 
-    // 3. 参加費支払 (T列)
+    // 3. 参加費支払 (T列: 事前支払有無, X列: 参加費支払確認)
     if (elements.toggleFeeBtn) {
       if (participant.feePaid) {
-        elements.toggleFeeBtn.className = 'touch-target py-3.5 px-4 rounded-xl bg-violet-600 text-white font-extrabold text-base shadow-md shadow-violet-200 active:scale-[0.98] transition flex items-center justify-center space-x-2';
+        // T列がTRUE（事前支払済）の場合はボタンを押せないようにする
+        elements.toggleFeeBtn.disabled = true;
+        elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-violet-50 text-violet-700 font-extrabold text-xs border border-violet-200 cursor-not-allowed flex items-center justify-center space-x-1';
         elements.toggleFeeBtn.innerHTML = `
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-          <span>参加費受領済</span>
+          <svg class="w-3.5 h-3.5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <span>事前支払済</span>
         `;
       } else {
-        elements.toggleFeeBtn.className = 'touch-target py-3.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-base border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-2';
-        elements.toggleFeeBtn.innerHTML = `
-          <span class="w-3.5 h-3.5 rounded-full border-2 border-slate-400"></span>
-          <span>未受領</span>
-        `;
+        // T列がFALSEの場合: ボタンが表示され、押すとX列（feeConfirmed）が更新される
+        elements.toggleFeeBtn.disabled = false;
+        if (participant.feeConfirmed) {
+          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+          elements.toggleFeeBtn.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>参加費受領済</span>
+          `;
+        } else {
+          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5';
+          elements.toggleFeeBtn.innerHTML = `
+            <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
+            <span>未受領</span>
+          `;
+        }
       }
     }
   }
@@ -778,8 +860,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const nextState = !(currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged);
       currentParticipant.bentoConfirmed = nextState;
       currentParticipant.bentoExchanged = nextState;
-    } else if (field === 'feePaid') {
-      currentParticipant.feePaid = !currentParticipant.feePaid;
+    } else if (field === 'feeConfirmed') {
+      // T列が事前支払済みの場合は何もしない
+      if (currentParticipant.feePaid) return;
+      currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
     }
 
     updateModalToggleButtons(currentParticipant);
@@ -789,12 +873,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // キャッシュの更新
     window.queueManager?.setCachedParticipants(state.participants);
 
+    // 更新ペイロード（T列 feePaid は変更せず維持、X列 feeConfirmed を更新）
     const payload = {
       id: currentParticipant.id,
       checkedIn: currentParticipant.checkedIn,
       bentoConfirmed: currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged,
-      bentoExchanged: currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged,
-      feePaid: currentParticipant.feePaid,
+      feeConfirmed: currentParticipant.feeConfirmed,
       rowIndex: currentParticipant.rowIndex,
     };
 
@@ -829,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   elements.toggleCheckinBtn?.addEventListener('click', () => handleToggleStatus('checkedIn'));
   elements.toggleBentoBtn?.addEventListener('click', () => handleToggleStatus('bentoConfirmed'));
-  elements.toggleFeeBtn?.addEventListener('click', () => handleToggleStatus('feePaid'));
+  elements.toggleFeeBtn?.addEventListener('click', () => handleToggleStatus('feeConfirmed'));
 
   /**
    * 手動データ同期ボタン

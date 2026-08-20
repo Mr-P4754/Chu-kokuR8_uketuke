@@ -228,7 +228,7 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
 
   const sheetName = env.GOOGLE_SHEET_NAME || '参加者情報一覧';
   const spreadsheetId = extractSpreadsheetId(env.GOOGLE_SPREADSHEET_ID);
-  const range = encodeURIComponent(`'${sheetName}'!A2:W`); // ヘッダー行を除く全23列（A〜W）
+  const range = encodeURIComponent(`'${sheetName}'!A2:X`); // ヘッダー行を除く全24列（A〜X）
 
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
 
@@ -259,6 +259,7 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
     };
 
     const bentoConfirmed = parseBoolean(row[22]); // [23] W列: 弁当券引換確認
+    const feeConfirmed = parseBoolean(row[23]); // [24] X列: 参加費支払確認（当日受領）
 
     return {
       id: String(row[0] || '').trim(),
@@ -280,23 +281,25 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
       location: String(row[16] || '').trim(),
       checkedIn: parseBoolean(row[17]), // [18] R列: 受付状況
       bentoOrdered: parseBoolean(row[18]), // [19] S列: 弁当事前注文有無
-      feePaid: parseBoolean(row[19]), // [20] T列: 参加費支払
+      feePaid: parseBoolean(row[19]), // [20] T列: 参加費事前支払（変更不可）
       isWalkin: parseBoolean(row[20]), // [21] U列: 当日受付
       updatedAt: String(row[21] || '').trim(), // [22] V列: 最終更新日時
       bentoConfirmed, // [23] W列: 弁当券引換確認
       bentoExchanged: bentoConfirmed, // 互換用プロパティ
+      feeConfirmed, // [24] X列: 参加費支払確認
       rowIndex,
     };
   });
 }
 
 /**
- * 参加者の受付ステータス（受付・参加費・弁当券引換確認・更新日時）を更新
+ * 参加者の受付ステータス（受付・弁当券引換確認・参加費支払確認・更新日時）を更新
+ * ※ T列（参加費事前支払）は変更せずそのまま維持
  */
 export async function updateParticipantStatus(
   env: EnvironmentVariables,
   payload: UpdateStatusRequest
-): Promise<{ id: string; checkedIn?: boolean; bentoOrdered?: boolean; bentoConfirmed?: boolean; bentoExchanged?: boolean; feePaid?: boolean; updatedAt: string }> {
+): Promise<{ id: string; checkedIn?: boolean; bentoOrdered?: boolean; bentoConfirmed?: boolean; feePaid?: boolean; feeConfirmed?: boolean; updatedAt: string }> {
   const token = await getGoogleAccessToken(
     env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     env.GOOGLE_PRIVATE_KEY
@@ -320,8 +323,8 @@ export async function updateParticipantStatus(
   const updatedAt = getJstTimestamp();
 
   // 現在の行の値を取得して指定されたフラグのみを上書き、または直接更新
-  // R列(18):受付状況, S列(19):弁当事前注文(維持), T列(20):参加費支払, U列(21):当日受付(維持), V列(22):最終更新日時, W列(23):弁当券引換確認
-  const rangeRead = `'${sheetName}'!R${targetRowIndex}:W${targetRowIndex}`;
+  // R列(18):受付状況, S列(19):弁当事前注文(維持), T列(20):参加費事前支払(維持), U列(21):当日受付(維持), V列(22):最終更新日時, W列(23):弁当券引換確認, X列(24):参加費支払確認
+  const rangeRead = `'${sheetName}'!R${targetRowIndex}:X${targetRowIndex}`;
   const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(rangeRead)}?valueRenderOption=UNFORMATTED_VALUE`;
   
   const readResponse = await fetchWithExponentialBackoff(readUrl, {
@@ -340,26 +343,28 @@ export async function updateParticipantStatus(
 
   let currentCheckedIn = false;
   let currentBentoOrdered = false;
-  let currentFee = false;
+  let currentFeePaid = false;
   let currentWalkin = false;
   let currentBentoConfirmed = false;
+  let currentFeeConfirmed = false;
 
   if (readResponse.ok) {
     const readResult = (await readResponse.json()) as { values?: unknown[][] };
     const rowValues = readResult.values?.[0] || [];
     currentCheckedIn = parseBooleanVal(rowValues[0]); // R
     currentBentoOrdered = parseBooleanVal(rowValues[1]); // S
-    currentFee = parseBooleanVal(rowValues[2]); // T
+    currentFeePaid = parseBooleanVal(rowValues[2]); // T (事前支払: 変更しない)
     currentWalkin = parseBooleanVal(rowValues[3]); // U
-    currentBentoConfirmed = parseBooleanVal(rowValues[5]); // W (インデックス5 = 6番目)
+    currentBentoConfirmed = parseBooleanVal(rowValues[5]); // W (弁当券引換確認)
+    currentFeeConfirmed = parseBooleanVal(rowValues[6]); // X (参加費支払確認)
   }
 
   const finalCheckedIn = payload.checkedIn !== undefined ? payload.checkedIn : currentCheckedIn;
   const requestedBentoConfirmed = payload.bentoConfirmed !== undefined ? payload.bentoConfirmed : payload.bentoExchanged;
   const finalBentoConfirmed = requestedBentoConfirmed !== undefined ? requestedBentoConfirmed : currentBentoConfirmed;
-  const finalFee = payload.feePaid !== undefined ? payload.feePaid : currentFee;
+  const finalFeeConfirmed = payload.feeConfirmed !== undefined ? payload.feeConfirmed : currentFeeConfirmed;
 
-  const rangeWrite = `'${sheetName}'!R${targetRowIndex}:W${targetRowIndex}`;
+  const rangeWrite = `'${sheetName}'!R${targetRowIndex}:X${targetRowIndex}`;
   const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(rangeWrite)}?valueInputOption=USER_ENTERED`;
 
   const bodyData = {
@@ -369,10 +374,11 @@ export async function updateParticipantStatus(
       [
         finalCheckedIn ? 'TRUE' : 'FALSE', // R: 受付状況
         currentBentoOrdered ? 'TRUE' : 'FALSE', // S: 弁当事前注文 (維持)
-        finalFee ? 'TRUE' : 'FALSE', // T: 参加費支払
+        currentFeePaid ? 'TRUE' : 'FALSE', // T: 参加費事前支払 (変更せず維持)
         currentWalkin ? 'TRUE' : 'FALSE', // U: 当日受付 (維持)
         updatedAt, // V: 最終更新日時
         finalBentoConfirmed ? 'TRUE' : 'FALSE', // W: 弁当券引換確認
+        finalFeeConfirmed ? 'TRUE' : 'FALSE', // X: 参加費支払確認 (当日受領)
       ],
     ],
   };
@@ -396,8 +402,8 @@ export async function updateParticipantStatus(
     checkedIn: finalCheckedIn,
     bentoOrdered: currentBentoOrdered,
     bentoConfirmed: finalBentoConfirmed,
-    bentoExchanged: finalBentoConfirmed,
-    feePaid: finalFee,
+    feePaid: currentFeePaid,
+    feeConfirmed: finalFeeConfirmed,
     updatedAt,
   };
 }
@@ -446,9 +452,10 @@ export async function appendWalkinParticipant(
     updatedAt: timestamp,
     bentoConfirmed: payload.bentoConfirmed || false,
     bentoExchanged: payload.bentoConfirmed || false,
+    feeConfirmed: payload.feeConfirmed || false,
   };
 
-  // 23列の配列データを作成（A〜W）
+  // 24列の配列データを作成（A〜X）
   const rowValues = [
     newParticipant.id, // A [1]
     newParticipant.organization, // B [2]
@@ -473,9 +480,10 @@ export async function appendWalkinParticipant(
     'TRUE', // U [21]
     newParticipant.updatedAt, // V [22]
     newParticipant.bentoConfirmed ? 'TRUE' : 'FALSE', // W [23]
+    newParticipant.feeConfirmed ? 'TRUE' : 'FALSE', // X [24]
   ];
 
-  const targetAppendRange = `'${sheetName}'!A:W`;
+  const targetAppendRange = `'${sheetName}'!A:X`;
   const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(targetAppendRange)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const response = await fetchWithExponentialBackoff(appendUrl, {

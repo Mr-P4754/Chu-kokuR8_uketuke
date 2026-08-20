@@ -62,14 +62,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
       <!-- タイトル & 大会名 -->
       <div class="flex items-center space-x-3">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
         </div>
         <div>
           <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">来場者照合・受付管理</h1>
-          <p class="text-xs text-slate-500 font-medium">教職員研究大会 運営本部</p>
         </div>
       </div>
 
@@ -154,19 +153,19 @@
   </header>
 
   <!-- メインコンテンツエリア -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col">
 
     <!-- タブ切り替え（検索 / 一覧） -->
-    <div class="flex border-b border-slate-300 mb-5">
+    <div class="flex border-b border-slate-300 mb-4">
       <button type="button" id="tabSearch"
-        class="touch-target py-3 px-6 text-sm sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2">
+        class="touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <span>検索照合（カナ検索）</span>
       </button>
       <button type="button" id="tabList"
-        class="touch-target py-3 px-6 text-sm sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2">
+        class="touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
         </svg>
@@ -175,55 +174,55 @@
     </div>
 
     <!-- 1. 検索タブセクション -->
-    <section id="searchSection" class="flex-1 flex flex-col space-y-4">
+    <section id="searchSection" class="flex-1 flex flex-col space-y-3">
       <!-- 検索入力バー -->
-      <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-2 sm:p-3 flex items-center">
-        <div class="pl-3 pr-2 text-indigo-600">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="relative bg-white rounded-xl shadow-sm border border-slate-200 p-2 sm:p-2.5 flex items-center">
+        <div class="pl-2.5 pr-2 text-indigo-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
         <input type="text" id="searchInput" placeholder="姓・名のフリガナ（例: ヤマダ）、漢字氏名、または学校名で検索"
-          class="w-full text-base sm:text-lg font-bold text-slate-900 placeholder-slate-400 outline-none bg-transparent py-2.5 px-1">
-        <button type="button" id="clearSearchButton" class="hidden p-2 text-slate-400 hover:text-slate-600 rounded-full">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          class="w-full text-sm sm:text-base font-bold text-slate-900 placeholder-slate-400 outline-none bg-transparent py-1.5 px-1">
+        <button type="button" id="clearSearchButton" class="hidden p-1.5 text-slate-400 hover:text-slate-600 rounded-full">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
       <!-- 検索結果情報バー -->
-      <div class="flex justify-between items-center px-1 text-xs sm:text-sm font-semibold text-slate-500">
+      <div class="flex justify-between items-center px-1 text-xs font-semibold text-slate-500">
         <span>照合結果: <span id="searchResultCount" class="text-indigo-600 font-bold">0件</span></span>
-        <span>カードをタップして詳細・受付更新</span>
+        <span>カードをタップして詳細確認・受付更新</span>
       </div>
 
-      <!-- 検索結果グリッド -->
-      <div id="searchResultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 flex-1">
+      <!-- 検索結果グリッド（コンパクトなカード配置） -->
+      <div id="searchResultsContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 flex-1">
         <!-- 初期状態プレースホルダー（JSで描画） -->
       </div>
     </section>
 
     <!-- 2. 一覧タブセクション（初期非表示） -->
-    <section id="listSection" class="hidden flex-1 flex flex-col space-y-4">
+    <section id="listSection" class="hidden flex-1 flex flex-col space-y-3">
       <!-- 絞り込みフィルターボタングループ -->
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" data-filter="all" class="filter-btn touch-target px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition">
+        <button type="button" data-filter="all" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition">
           すべて
         </button>
-        <button type="button" data-filter="unregistered" class="filter-btn touch-target px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+        <button type="button" data-filter="unregistered" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
           未受付
         </button>
-        <button type="button" data-filter="registered" class="filter-btn touch-target px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+        <button type="button" data-filter="registered" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
           受付済
         </button>
-        <button type="button" data-filter="walkin" class="filter-btn touch-target px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+        <button type="button" data-filter="walkin" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
           当日受付のみ
         </button>
-        <button type="button" data-filter="bento_pending" class="filter-btn touch-target px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+        <button type="button" data-filter="bento_pending" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
           弁当未引換
         </button>
-        <button type="button" data-filter="fee_pending" class="filter-btn touch-target px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+        <button type="button" data-filter="fee_pending" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
           参加費未受領
         </button>
       </div>
@@ -249,52 +248,66 @@
 
     <!-- モーダル本体 -->
     <div class="min-h-full flex items-center justify-center p-3 sm:p-6">
-      <div id="modalContent" class="relative bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-modal-pop z-10">
+      <div id="modalContent" class="relative bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-slate-200 animate-modal-pop z-10">
 
         <!-- クローズボタン (大きな×ボタン) -->
         <button type="button" id="modalCloseButton"
           class="absolute top-4 right-4 touch-target p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition">
-          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
         <!-- モーダルヘッダー（氏名・所属） -->
-        <div class="pr-12 mb-6">
-          <div class="flex items-center space-x-2 mb-1">
-            <span id="modalKana" class="text-sm font-bold text-indigo-600 tracking-wider">ヤマダ タロウ</span>
-            <span id="modalWalkinBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+        <div class="pr-10 mb-4">
+          <div class="flex items-center space-x-2 mb-0.5">
+            <span id="modalKana" class="text-xs sm:text-sm font-bold text-indigo-600 tracking-wider">ヤマダ タロウ</span>
+            <span id="modalWalkinBadge" class="hidden px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
               当日受付
             </span>
           </div>
-          <h2 id="modalName" class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">山田 太郎</h2>
-          <p class="text-sm sm:text-base font-semibold text-slate-600 mt-1">
+          <h2 id="modalName" class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">山田 太郎</h2>
+          <p class="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5">
             <span id="modalOrg">-</span> <span class="text-slate-400">/</span> <span id="modalPosition">-</span>
           </p>
         </div>
 
         <!-- 3大ステータス更新トグルボタン -->
-        <div class="space-y-3 mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-          <p class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">ステータス更新</p>
+        <div class="space-y-2 mb-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+          <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">ステータス更新</p>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <!-- 1. 受付状況 -->
-            <button type="button" id="toggleCheckinBtn" class="touch-target py-3.5 px-4 rounded-xl font-extrabold text-base transition flex items-center justify-center space-x-2">
+            <button type="button" id="toggleCheckinBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-sm transition flex items-center justify-center space-x-1.5">
               <span>未受付</span>
             </button>
             <!-- 2. 弁当引換 -->
-            <button type="button" id="toggleBentoBtn" class="touch-target py-3.5 px-4 rounded-xl font-extrabold text-base transition flex items-center justify-center space-x-2">
+            <button type="button" id="toggleBentoBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-sm transition flex items-center justify-center space-x-1.5">
               <span>弁当引換</span>
             </button>
             <!-- 3. 参加費支払 -->
-            <button type="button" id="toggleFeeBtn" class="touch-target py-3.5 px-4 rounded-xl font-extrabold text-base transition flex items-center justify-center space-x-2">
+            <button type="button" id="toggleFeeBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-sm transition flex items-center justify-center space-x-1.5">
               <span>未受領</span>
             </button>
           </div>
         </div>
 
-        <!-- 参加者詳細情報グリッド（スプレッドシートデータ参照） -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs sm:text-sm bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+        <!-- 参加者詳細情報グリッド（スプレッドシートデータ参照 & ステータス明記） -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs bg-white rounded-2xl border border-slate-200/80 p-3.5 mb-3.5">
+          <!-- 追加された重要ステータス情報 -->
+          <div class="bg-slate-50 p-2 rounded-lg">
+            <span class="text-slate-400 block font-medium">受付状況</span>
+            <span id="modalStatusCheckin" class="font-bold text-slate-900">-</span>
+          </div>
+          <div class="bg-slate-50 p-2 rounded-lg">
+            <span class="text-slate-400 block font-medium">弁当事前注文</span>
+            <span id="modalStatusBento" class="font-bold text-slate-900">-</span>
+          </div>
+          <div class="bg-slate-50 p-2 rounded-lg">
+            <span class="text-slate-400 block font-medium">参加費状況</span>
+            <span id="modalStatusFee" class="font-bold text-slate-900">-</span>
+          </div>
+
           <div>
             <span class="text-slate-400 block font-medium">電話番号</span>
             <span id="modalPhone" class="font-bold text-slate-800">-</span>
@@ -334,7 +347,7 @@
         </div>
 
         <!-- 連絡・要望 -->
-        <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3 mb-4 text-xs sm:text-sm">
+        <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-2.5 mb-3.5 text-xs">
           <span class="text-amber-800 font-bold block mb-0.5">連絡・要望事項</span>
           <p id="modalNotes" class="text-slate-700 font-medium whitespace-pre-wrap">-</p>
         </div>
@@ -342,7 +355,7 @@
         <!-- フッター閉じるボタン -->
         <div class="flex justify-end">
           <button type="button" onclick="document.getElementById('modalCloseButton').click()"
-            class="touch-target px-6 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm transition">
+            class="touch-target px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs sm:text-sm transition">
             閉じる
           </button>
         </div>

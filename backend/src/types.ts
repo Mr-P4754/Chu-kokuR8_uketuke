@@ -11,7 +11,7 @@ export interface EnvironmentVariables {
 }
 
 /**
- * 参加者データのインターフェース（スプレッドシート23列に対応）
+ * 参加者データのインターフェース（スプレッドシート24列に対応）
  */
 export interface Participant {
   id: string; // [1] A: システムID (UUID)
@@ -33,11 +33,12 @@ export interface Participant {
   location: string; // [17] Q: 所属所在地
   checkedIn: boolean; // [18] R: 受付状況 (TRUE/FALSE)
   bentoOrdered: boolean; // [19] S: 弁当注文 (TRUE/FALSE: 事前注文有無)
-  feePaid: boolean; // [20] T: 参加費支払 (TRUE/FALSE)
+  feePaid: boolean; // [20] T: 参加費事前支払 (TRUE/FALSE: 変更不可)
   isWalkin: boolean; // [21] U: 当日受付 (TRUE/FALSE)
   updatedAt: string; // [22] V: 最終更新日時
   bentoConfirmed: boolean; // [23] W: 弁当券引換確認 (TRUE/FALSE)
-  bentoExchanged: boolean; // 互換用エイリアス（bentoConfirmedと同等）
+  bentoExchanged: boolean; // 互換用エイリアス
+  feeConfirmed: boolean; // [24] X: 参加費支払確認 (TRUE/FALSE: 当日受領フラグ)
   rowIndex?: number; // スプレッドシート上の行番号（2行目以降、1-indexed）
 }
 
@@ -49,7 +50,7 @@ export interface UpdateStatusRequest {
   checkedIn?: boolean; // 受付状況 (R列)
   bentoConfirmed?: boolean; // 弁当券引換確認 (W列)
   bentoExchanged?: boolean; // 弁当券引換確認（互換用）
-  feePaid?: boolean; // 参加費支払 (T列)
+  feeConfirmed?: boolean; // 参加費支払確認 (X列: 当日受領フラグ)
   rowIndex?: number; // 行番号（指定があれば検索をスキップ可能）
 }
 
@@ -76,7 +77,8 @@ export interface WalkinRegistrationRequest {
   checkedIn?: boolean; // 受付状況（指定なし時はtrue）
   bentoOrdered?: boolean; // 弁当注文（当日受付時はデフォルトfalse）
   bentoConfirmed?: boolean; // 弁当引換確認（指定なし時はfalse）
-  feePaid?: boolean; // 参加費支払（指定なし時はfalse）
+  feePaid?: boolean; // 参加費事前支払（当日登録はfalse）
+  feeConfirmed?: boolean; // 参加費支払確認（指定なし時はfalse）
 }
 
 /**
