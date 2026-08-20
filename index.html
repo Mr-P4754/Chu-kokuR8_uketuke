@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>来場者受付システム | 教職員研究大会</title>
-  <meta name="description" content="教職員研究大会の受付・来場者情報照合システム">
+  <title id="pageTitle">来場者受付システム | 教職員研究大会</title>
+  <meta name="description" content="受付・来場者情報照合システム">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -40,7 +40,7 @@
         </svg>
       </div>
       <h2 class="text-xl font-bold text-slate-900 mb-1">受付システム ログイン</h2>
-      <p class="text-xs text-slate-500 mb-6">受付スタッフ専用の認証パスワードを入力してください</p>
+      <p class="text-xs text-slate-500 mb-6"><span class="conference-name font-semibold text-slate-700">教職員研究大会</span> 受付スタッフ専用認証</p>
 
       <div class="space-y-4 text-left">
         <div>
@@ -68,7 +68,8 @@
           </svg>
         </div>
         <div>
-          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">来場者照合・受付管理</h1>
+          <div class="text-[11px] font-bold text-indigo-600 tracking-tight leading-tight conference-name">教職員研究大会</div>
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight leading-tight">来場者照合・受付管理</h1>
         </div>
       </div>
 

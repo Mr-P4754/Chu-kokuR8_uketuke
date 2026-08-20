@@ -1061,6 +1061,35 @@ document.addEventListener('DOMContentLoaded', () => {
     await fetchParticipantsFromApi();
   });
 
+  /**
+   * 大会名などの公開設定情報を取得し、画面およびドキュメントタイトルに動的反映
+   */
+  async function loadConferenceSettings() {
+    const baseUrl = window.AppConfig?.apiBaseUrl || '';
+    try {
+      const response = await fetch(`${baseUrl}/api/settings`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+
+      if (!response.ok) return;
+
+      const result = await response.json();
+      if (result.success && result.data?.conferenceName) {
+        const confName = result.data.conferenceName;
+        // 1. タイトルタグの動的更新
+        document.title = `${confName} - 受付管理`;
+        // 2. 指定されたクラス要素のテキスト更新
+        document.querySelectorAll('.conference-name').forEach((el) => {
+          el.textContent = confName;
+        });
+      }
+    } catch (error) {
+      console.warn('[Settings Warning] 設定情報の取得に失敗しました:', error);
+    }
+  }
+
   // 初期化実行
+  loadConferenceSettings();
   checkAuthentication();
 });
