@@ -3,6 +3,9 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // モーダル表示中の参加者IDを保持する状態変数
+  let currentModalParticipantId = null;
+
   // 状態管理ステート
   const state = {
     participants: [], // 全参加者データ
@@ -223,12 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCurrentView();
         updateLastSyncDisplay();
 
-        // モーダルが開いている場合は最新の参加者データでモーダル内表示をリアクティブ更新
-        if (state.selectedParticipant && elements.detailModal && !elements.detailModal.classList.contains('hidden')) {
-          const latest = state.participants.find((p) => p.id === state.selectedParticipant.id);
-          if (latest) {
-            state.selectedParticipant = latest;
-            updateModalContent(latest);
+        // モーダル表示中の場合、最新データでモーダル内DOMを直接上書き更新（リアクティブ化）
+        if (currentModalParticipantId !== null) {
+          const latestParticipant = state.participants.find((p) => p.id === currentModalParticipantId);
+          if (latestParticipant) {
+            state.selectedParticipant = latestParticipant;
+            updateModalUI(latestParticipant);
           }
         }
       }
@@ -691,9 +694,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * モーダル内の全表示コンテンツを最新の参加者データで更新
+   * モーダル内の全DOM要素を最新の参加者データで直接上書き更新（部分レンダリング）
    */
-  function updateModalContent(participant) {
+  function updateModalUI(participant) {
     if (!participant) return;
 
     if (elements.modalName) elements.modalName.textContent = `${participant.lastName} ${participant.firstName}`;
@@ -758,7 +761,8 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function openDetailModal(participant) {
     state.selectedParticipant = participant;
-    updateModalContent(participant);
+    currentModalParticipantId = participant.id; // 現在開いている参加者IDをセット
+    updateModalUI(participant);
 
     elements.detailModal?.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
@@ -851,6 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.detailModal?.classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
     state.selectedParticipant = null;
+    currentModalParticipantId = null; // 表示中IDをnullにリセット
   }
 
   elements.modalCloseButton?.addEventListener('click', closeDetailModal);
