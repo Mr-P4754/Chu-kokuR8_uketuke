@@ -222,6 +222,15 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatistics();
         renderCurrentView();
         updateLastSyncDisplay();
+
+        // モーダルが開いている場合は最新の参加者データでモーダル内表示をリアクティブ更新
+        if (state.selectedParticipant && elements.detailModal && !elements.detailModal.classList.contains('hidden')) {
+          const latest = state.participants.find((p) => p.id === state.selectedParticipant.id);
+          if (latest) {
+            state.selectedParticipant = latest;
+            updateModalContent(latest);
+          }
+        }
       }
     } catch (error) {
       console.warn('[Fetch Warning] 最新データの取得に失敗しました（キャッシュデータを使用します）:', error);
@@ -405,19 +414,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
-   * 一覧フィルター切り替え（アクティブ／非アクティブのホバー制御を最適化）
+   * 一覧フィルター切り替え（.filter-btn.active による明示的な状態管理）
    */
-  const ACTIVE_FILTER_CLASSES = ['bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-sm'];
-  const INACTIVE_FILTER_CLASSES = ['bg-white', 'text-slate-700', 'border', 'border-slate-200', 'hover:bg-slate-100'];
-
   elements.filterButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      elements.filterButtons.forEach((b) => {
-        b.classList.remove(...ACTIVE_FILTER_CLASSES);
-        b.classList.add(...INACTIVE_FILTER_CLASSES);
-      });
-      btn.classList.remove(...INACTIVE_FILTER_CLASSES);
-      btn.classList.add(...ACTIVE_FILTER_CLASSES);
+      elements.filterButtons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
 
       state.currentFilter = btn.dataset.filter || 'all';
       renderListView();
@@ -689,10 +691,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 詳細モーダルを開く
+   * モーダル内の全表示コンテンツを最新の参加者データで更新
    */
-  function openDetailModal(participant) {
-    state.selectedParticipant = participant;
+  function updateModalContent(participant) {
+    if (!participant) return;
 
     if (elements.modalName) elements.modalName.textContent = `${participant.lastName} ${participant.firstName}`;
     if (elements.modalKana) elements.modalKana.textContent = `${participant.lastNameKana} ${participant.firstNameKana}`;
@@ -749,6 +751,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // トグルボタンの状態更新
     updateModalToggleButtons(participant);
+  }
+
+  /**
+   * 詳細モーダルを開く
+   */
+  function openDetailModal(participant) {
+    state.selectedParticipant = participant;
+    updateModalContent(participant);
 
     elements.detailModal?.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
