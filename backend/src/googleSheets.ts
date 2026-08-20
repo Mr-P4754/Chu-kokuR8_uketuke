@@ -1,4 +1,10 @@
-import { EnvironmentVariables, Participant, UpdateStatusRequest, WalkinRegistrationRequest } from './types';
+import {
+  EnvironmentVariables,
+  Participant,
+  UpdateStatusRequest,
+  WalkinRegistrationRequest,
+  FormOptionsData,
+} from './types';
 
 /**
  * トークンキャッシュ用インターフェース
@@ -445,7 +451,7 @@ export async function appendWalkinParticipant(
     subcommittee2: payload.subcommittee2 || '',
     notes: payload.notes || '',
     location: payload.location || '',
-    checkedIn: payload.checkedIn !== undefined ? payload.checkedIn : true, // 当日登録はデフォルトで受付済
+    checkedIn: payload.checkedIn !== undefined ? payload.checkedIn : false, // 当日登録の初期値は未受付（FALSE）
     bentoOrdered: payload.bentoOrdered || false,
     feePaid: payload.feePaid || false,
     isWalkin: true, // 当日受付フラグは必ずTRUE
@@ -505,4 +511,108 @@ export async function appendWalkinParticipant(
   }
 
   return newParticipant;
+}
+
+/**
+ * デフォルトの学年選択肢
+ */
+function getDefaultDesiredGrades(): string[] {
+  return ['第1学年', '第2学年', '第3学年', '第4学年', '第5学年', '第6学年', '全学年自由見学'];
+}
+
+/**
+ * デフォルトの分科会選択肢
+ */
+function getDefaultSubcommittees(): string[] {
+  return [
+    '第1分科会（国語科）',
+    '第2分科会（社会科）',
+    '第3分科会（算数・数学科）',
+    '第4分科会（理科）',
+    '第5分科会（外国語・英語）',
+    '第6分科会（ICT活用・情報教育）',
+    '第7分科会（特別支援教育）',
+  ];
+}
+
+/**
+ * 選択肢マスタシートからプルダウン用データを取得
+ */
+export async function fetchFormOptions(env: EnvironmentVariables): Promise<FormOptionsData> {
+  const token = await getGoogleAccessToken(
+    env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    env.GOOGLE_PRIVATE_KEY
+  );
+
+  const sheetName = env.OPTIONS_SHEET_NAME || '選択肢マスタ';
+  const spreadsheetId = extractSpreadsheetId(env.GOOGLE_SPREADSHEET_ID);
+  const range = encodeURIComponent(`'${sheetName}'!A2:B`);
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
+
+  try {
+    const response = await fetchWithExponentialBackoff(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[Options Warning] 選択肢マスタの取得に失敗したためデフォルト選択肢を使用します (${response.status})`);
+      return {
+        desiredGrade: getDefaultDesiredGrades(),
+        subcommittee1: getDefaultSubcommittees(),
+        subcommittee2: getDefaultSubcommittees(),
+      };
+    }
+
+    const result = (await response.json()) as { values?: string[][] };
+    const rows = result.values || [];
+
+    const grouped: Record<string, string[]> = {};
+    for (const row of rows) {
+      if (!row || row.length < 2) continue;
+      const category = String(row[0] || '').trim();
+      const option = String(row[1] || '').trim();
+      if (!category || !option) continue;
+
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(option);
+    }
+
+    // 授業公開希望学年の抽出
+    const desiredGrade =
+      grouped['授業公開希望学年'] ||
+      grouped['希望学年'] ||
+      grouped['学年'] ||
+      getDefaultDesiredGrades();
+
+    // 分科会の抽出（共通「分科会」または個別指定）
+    const commonSub = grouped['分科会'] || grouped['分科会希望'] || [];
+    const sub1 =
+      grouped['分科会（第1希望）'] ||
+      grouped['第1希望分科会'] ||
+      (commonSub.length > 0 ? commonSub : getDefaultSubcommittees());
+    const sub2 =
+      grouped['分科会（第2希望）'] ||
+      grouped['第2希望分科会'] ||
+      (commonSub.length > 0 ? commonSub : getDefaultSubcommittees());
+
+    return {
+      desiredGrade,
+      subcommittee1: sub1,
+      subcommittee2: sub2,
+      raw: grouped,
+    };
+  } catch (error) {
+    console.error('[Options Error]', error);
+    return {
+      desiredGrade: getDefaultDesiredGrades(),
+      subcommittee1: getDefaultSubcommittees(),
+      subcommittee2: getDefaultSubcommittees(),
+    };
+  }
 }

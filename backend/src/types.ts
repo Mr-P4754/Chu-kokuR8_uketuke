@@ -6,8 +6,19 @@ export interface EnvironmentVariables {
   GOOGLE_PRIVATE_KEY: string;
   GOOGLE_SPREADSHEET_ID: string;
   GOOGLE_SHEET_NAME?: string;
+  OPTIONS_SHEET_NAME?: string;
   CORS_ORIGIN?: string;
   AUTH_PASSWORD?: string;
+}
+
+/**
+ * 選択肢マスタのデータ構造
+ */
+export interface FormOptionsData {
+  desiredGrade: string[];
+  subcommittee1: string[];
+  subcommittee2: string[];
+  raw?: Record<string, string[]>;
 }
 
 /**

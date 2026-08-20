@@ -4,12 +4,14 @@ import {
   fetchAllParticipants,
   updateParticipantStatus,
   appendWalkinParticipant,
+  fetchFormOptions,
 } from './googleSheets';
 import {
   EnvironmentVariables,
   Participant,
   UpdateStatusRequest,
   WalkinRegistrationRequest,
+  FormOptionsData,
   ApiResponse,
 } from './types';
 
@@ -191,6 +193,54 @@ app.post('/api/walkin', async (context) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '当日参加者の登録中にエラーが発生しました。';
     console.error('[API Error: POST /api/walkin]', errorMessage);
+
+    return context.json<ApiResponse>(
+      {
+        success: false,
+        error: errorMessage,
+      },
+      500
+    );
+  }
+});
+
+// 選択肢マスタ用インメモリキャッシュ（TTL: 30秒）
+interface OptionsCache {
+  data: FormOptionsData;
+  timestamp: number;
+}
+let cachedOptions: OptionsCache | null = null;
+const OPTIONS_CACHE_TTL_MS = 30000;
+
+/**
+ * 4. 選択肢マスタ取得API
+ * GET /api/options
+ * スプレッドシートの「選択肢マスタ」から学年・分科会の選択肢リストを取得して返却
+ */
+app.get('/api/options', async (context) => {
+  try {
+    const now = Date.now();
+    if (cachedOptions && (now - cachedOptions.timestamp < OPTIONS_CACHE_TTL_MS)) {
+      return context.json<ApiResponse<FormOptionsData>>({
+        success: true,
+        data: cachedOptions.data,
+      });
+    }
+
+    const options = await fetchFormOptions(context.env);
+
+    cachedOptions = {
+      data: options,
+      timestamp: Date.now(),
+    };
+
+    return context.json<ApiResponse<FormOptionsData>>({
+      success: true,
+      data: options,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '選択肢マスタの取得中にエラーが発生しました。';
+    console.error('[API Error: GET /api/options]', errorMessage);
 
     return context.json<ApiResponse>(
       {

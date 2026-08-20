@@ -14,6 +14,67 @@ document.addEventListener('DOMContentLoaded', () => {
   const registeredIdSpan = document.getElementById('registeredId');
   const resetFormButton = document.getElementById('resetFormButton');
 
+  // プルダウン要素
+  const desiredGradeSelect = document.getElementById('desiredGrade');
+  const subcommittee1Select = document.getElementById('subcommittee1');
+  const subcommittee2Select = document.getElementById('subcommittee2');
+
+  /**
+   * 選択肢マスタ（GET /api/options）を取得してプルダウンに動的生成
+   */
+  async function loadFormOptions() {
+    const baseUrl = window.AppConfig?.apiBaseUrl || '';
+    try {
+      const response = await fetch(`${baseUrl}/api/options`);
+      if (!response.ok) throw new Error(`選択肢取得エラー: ${response.status}`);
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        populateSelect(desiredGradeSelect, result.data.desiredGrade, '授業公開希望学年を選択');
+        populateSelect(subcommittee1Select, result.data.subcommittee1, '分科会（第1希望）を選択');
+        populateSelect(subcommittee2Select, result.data.subcommittee2, '分科会（第2希望）を選択');
+      }
+    } catch (error) {
+      console.warn('[Options Warning] 選択肢マスタの取得に失敗したためデフォルト選択肢を使用します:', error);
+      // フォールバック選択肢
+      populateSelect(
+        desiredGradeSelect,
+        ['第1学年', '第2学年', '第3学年', '第4学年', '第5学年', '第6学年', '全学年自由見学'],
+        '授業公開希望学年を選択'
+      );
+      const defaultSubs = [
+        '第1分科会（国語科）',
+        '第2分科会（社会科）',
+        '第3分科会（算数・数学科）',
+        '第4分科会（理科）',
+        '第5分科会（外国語・英語）',
+        '第6分科会（ICT活用・情報教育）',
+        '第7分科会（特別支援教育）',
+      ];
+      populateSelect(subcommittee1Select, defaultSubs, '分科会（第1希望）を選択');
+      populateSelect(subcommittee2Select, defaultSubs, '分科会（第2希望）を選択');
+    }
+  }
+
+  /**
+   * select要素にoptionを生成
+   */
+  function populateSelect(selectElement, optionsList, defaultPlaceholder = '選択してください') {
+    if (!selectElement || !Array.isArray(optionsList)) return;
+    const currentVal = selectElement.value;
+    selectElement.innerHTML = `<option value="">${defaultPlaceholder}</option>`;
+
+    optionsList.forEach((opt) => {
+      const optionElem = document.createElement('option');
+      optionElem.value = opt;
+      optionElem.textContent = opt;
+      if (opt === currentVal) {
+        optionElem.selected = true;
+      }
+      selectElement.appendChild(optionElem);
+    });
+  }
+
   /**
    * エラー・成功アラートメッセージの表示
    */
@@ -58,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isSubmitting) {
       submitButton.classList.add('opacity-75', 'cursor-not-allowed');
       buttonSpinner?.classList.remove('hidden');
-      if (buttonText) buttonText.textContent = '登録処理中...';
+      if (buttonText) buttonText.textContent = '受付データを送信中...';
     } else {
       submitButton.classList.remove('opacity-75', 'cursor-not-allowed');
       buttonSpinner?.classList.add('hidden');
@@ -67,83 +128,95 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * フリガナのひらがな→カタカナ変換補助
+   * ひらがな→カタカナ自動変換
    */
-  function convertHiraganaToKatakana(inputString) {
-    return inputString.replace(/[\u3041-\u3096]/g, (char) => {
-      return String.fromCharCode(char.charCodeAt(0) + 0x60);
-    });
+  function toKatakana(str) {
+    return str.replace(/[\u3041-\u3096]/g, (char) =>
+      String.fromCharCode(char.charCodeAt(0) + 0x60)
+    );
   }
 
-  // フリガナ入力欄でフォーカスが外れた際に自動でカタカナに補正
+  // フリガナ入力時に自動でカタカナへ正規化
   const lastNameKanaInput = document.getElementById('lastNameKana');
   const firstNameKanaInput = document.getElementById('firstNameKana');
 
-  lastNameKanaInput?.addEventListener('blur', (event) => {
-    const target = event.target;
-    if (target) {
-      target.value = convertHiraganaToKatakana(target.value.trim());
-    }
+  lastNameKanaInput?.addEventListener('blur', (e) => {
+    e.target.value = toKatakana(e.target.value.trim());
+  });
+  firstNameKanaInput?.addEventListener('blur', (e) => {
+    e.target.value = toKatakana(e.target.value.trim());
   });
 
-  firstNameKanaInput?.addEventListener('blur', (event) => {
-    const target = event.target;
-    if (target) {
-      target.value = convertHiraganaToKatakana(target.value.trim());
-    }
-  });
-
-  // 電話番号の自動フォーカス移動
+  // 電話番号の入力制限とオートフォーカス移動
   const phone1Input = document.getElementById('phone1');
   const phone2Input = document.getElementById('phone2');
   const phone3Input = document.getElementById('phone3');
 
-  phone1Input?.addEventListener('input', (event) => {
-    if (event.target.value.length >= 3) phone2Input?.focus();
-  });
-  phone2Input?.addEventListener('input', (event) => {
-    if (event.target.value.length >= 4) phone3Input?.focus();
+  const setupAutoTab = (currentInput, nextInput, maxLength) => {
+    currentInput?.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+      if (e.target.value.length >= maxLength && nextInput) {
+        nextInput.focus();
+      }
+    });
+  };
+
+  setupAutoTab(phone1Input, phone2Input, 3);
+  setupAutoTab(phone2Input, phone3Input, 4);
+  phone3Input?.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
   });
 
   /**
    * フォーム送信ハンドラー
    */
-  formElement?.addEventListener('submit', async (event) => {
-    event.preventDefault();
+  formElement?.addEventListener('submit', async (e) => {
+    e.preventDefault();
     clearAlert();
 
+    // フォームデータの抽出
     const formData = new FormData(formElement);
     const lastName = String(formData.get('lastName') || '').trim();
     const firstName = String(formData.get('firstName') || '').trim();
-    const lastNameKana = convertHiraganaToKatakana(String(formData.get('lastNameKana') || '').trim());
-    const firstNameKana = convertHiraganaToKatakana(String(formData.get('firstNameKana') || '').trim());
+    const lastNameKana = toKatakana(String(formData.get('lastNameKana') || '').trim());
+    const firstNameKana = toKatakana(String(formData.get('firstNameKana') || '').trim());
     const organization = String(formData.get('organization') || '').trim();
     const position = String(formData.get('position') || '').trim();
+    const location = String(formData.get('location') || '').trim();
     const phone1 = String(formData.get('phone1') || '').trim();
     const phone2 = String(formData.get('phone2') || '').trim();
     const phone3 = String(formData.get('phone3') || '').trim();
     const email = String(formData.get('email') || '').trim();
-    const location = String(formData.get('location') || '').trim();
     const transportation = String(formData.get('transportation') || '').trim();
     const desiredGrade = String(formData.get('desiredGrade') || '').trim();
     const subcommittee1 = String(formData.get('subcommittee1') || '').trim();
     const subcommittee2 = String(formData.get('subcommittee2') || '').trim();
     const notes = String(formData.get('notes') || '').trim();
 
-    // クライアント側バリデーション
+    // バリデーション
     if (!lastName || !firstName) {
-      showAlert('お名前（姓・名）を入力してください。');
-      return;
-    }
-    if (!lastNameKana || !firstNameKana) {
-      showAlert('お名前のフリガナ（セイ・メイ）を入力してください。');
-      return;
-    }
-    if (!organization) {
-      showAlert('ご所属（法人・学校・団体名）を入力してください。');
+      showAlert('氏名（姓・名）を両方入力してください。');
       return;
     }
 
+    if (!lastNameKana || !firstNameKana) {
+      showAlert('氏名フリガナ（セイ・メイ）を両方入力してください。');
+      return;
+    }
+
+    if (!organization) {
+      showAlert('所属（学校名・法人名）を入力してください。');
+      return;
+    }
+
+    // カタカナ形式チェック
+    const isKana = (val) => /^[\u30A0-\u30FFー]+$/.test(val);
+    if (!isKana(lastNameKana) || !isKana(firstNameKana)) {
+      showAlert('フリガナは全角カタカナで入力してください。');
+      return;
+    }
+
+    // リクエストペイロードの作成
     const payload = {
       organization,
       lastName,
@@ -161,9 +234,11 @@ document.addEventListener('DOMContentLoaded', () => {
       subcommittee2,
       notes,
       location,
-      checkedIn: true, // 当日受付完了として登録
-      bentoExchanged: false,
+      checkedIn: false, // 当日受付時の初期ステータスは未受付（FALSE）
+      bentoOrdered: false,
+      bentoConfirmed: false,
       feePaid: false,
+      feeConfirmed: false,
     };
 
     setSubmittingState(true);
@@ -218,4 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   });
+
+  // 選択肢マスタの読み込み実行
+  loadFormOptions();
 });
