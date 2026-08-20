@@ -39,17 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // フォールバック選択肢
       populateSelect(
         desiredGradeSelect,
-        ['第1学年', '第2学年', '第3学年', '第4学年', '第5学年', '第6学年', '全学年自由見学'],
+        ['【A1】第4学年', '【A2】第5学年', '【A3】第6学年'],
         '授業公開希望学年を選択'
       );
       const defaultSubs = [
-        '第1分科会（国語科）',
-        '第2分科会（社会科）',
-        '第3分科会（算数・数学科）',
-        '第4分科会（理科）',
-        '第5分科会（外国語・英語）',
-        '第6分科会（ICT活用・情報教育）',
-        '第7分科会（特別支援教育）',
+        '【B1】話すこと・聞くこと',
+        '【B2】書くこと',
+        '【B3】読むこと（文学）',
+        '【B4】読むこと（説明）',
       ];
       populateSelect(subcommittee1Select, defaultSubs, '分科会（第1希望）を選択');
       populateSelect(subcommittee2Select, defaultSubs, '分科会（第2希望）を選択');
