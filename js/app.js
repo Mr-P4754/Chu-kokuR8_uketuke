@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchQuery: '', // 検索文字列
     selectedParticipant: null, // モーダルで選択中の参加者
     isAuthenticated: false, // 簡易認証フラグ
-    authPassword: 'reception2026', // デフォルト簡易認証パスワード
     isFetching: false, // データ取得中フラグ
     isUpdatingStatus: false, // ステータス更新中フラグ（連打防止・排他制御用）
   };
@@ -130,6 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
    * 簡易認証の検証
    */
   function checkAuthentication() {
+    // 確実にパスワード入力欄を初期化（空欄）
+    if (elements.authPasswordInput) {
+      elements.authPasswordInput.value = '';
+    }
+
     const storedAuth = sessionStorage.getItem(window.AppConfig?.authStorageKey || 'reception_auth_token');
     if (storedAuth === 'authorized') {
       state.isAuthenticated = true;
@@ -138,7 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       state.isAuthenticated = false;
       elements.authModal?.classList.remove('hidden');
-      setTimeout(() => elements.authPasswordInput?.focus(), 100);
+      if (elements.authPasswordInput) {
+        elements.authPasswordInput.value = '';
+        setTimeout(() => elements.authPasswordInput?.focus(), 100);
+      }
     }
   }
 
