@@ -362,15 +362,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
       }
 
-      // 漢字氏名・所属・電話番号での検索一致
+      // 漢字氏名・所属・電話番号・システムID（UUID）での検索一致
       const fullName = `${normalizeString(p.lastName)}${normalizeString(p.firstName)}`;
       const org = normalizeString(p.organization);
       const phone = `${p.phone1}${p.phone2}${p.phone3}`;
+      const idRaw = (p.id || '').toLowerCase();
+      const idClean = idRaw.replace(/[^a-z0-9]/g, '');
+      const queryClean = normQuery.replace(/[^a-z0-9]/g, '');
 
       return (
         fullName.includes(normQuery) ||
         org.includes(normQuery) ||
-        phone.includes(normQuery)
+        phone.includes(normQuery) ||
+        idRaw.includes(normQuery) ||
+        (queryClean.length >= 3 && idClean.includes(queryClean))
       );
     });
   }
@@ -400,16 +405,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
-   * 一覧フィルター切り替え
+   * 一覧フィルター切り替え（アクティブ／非アクティブのホバー制御を最適化）
    */
+  const ACTIVE_FILTER_CLASSES = ['bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-sm'];
+  const INACTIVE_FILTER_CLASSES = ['bg-white', 'text-slate-700', 'border', 'border-slate-200', 'hover:bg-slate-100'];
+
   elements.filterButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       elements.filterButtons.forEach((b) => {
-        b.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
-        b.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+        b.classList.remove(...ACTIVE_FILTER_CLASSES);
+        b.classList.add(...INACTIVE_FILTER_CLASSES);
       });
-      btn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
-      btn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+      btn.classList.remove(...INACTIVE_FILTER_CLASSES);
+      btn.classList.add(...ACTIVE_FILTER_CLASSES);
 
       state.currentFilter = btn.dataset.filter || 'all';
       renderListView();
