@@ -1092,7 +1092,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // モーダルを即座に非表示にして次の操作へスムーズに移行
     elements.detailModal?.classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
     state.selectedParticipant = null;
     currentModalParticipantId = null;
     hasModalChanges = false;
