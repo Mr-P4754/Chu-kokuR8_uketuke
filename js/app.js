@@ -618,22 +618,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // スプレッドシートのような表形式テーブルを生成
+    // スプレッドシートのような表形式テーブルを生成（No列と氏名列をSticky固定）
     elements.listResultsContainer.innerHTML = `
-      <div class="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm">
+      <div class="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm relative">
         <table class="w-full text-left border-collapse text-xs sm:text-sm">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider select-none sticky top-0">
-              <th class="py-3 px-3 sm:px-4 text-center w-12">No</th>
-              <th class="py-3 px-3 sm:px-4">氏名 (フリガナ)</th>
-              <th class="py-3 px-3 sm:px-4">所属 / 役職</th>
-              <th class="py-3 px-3 sm:px-4 text-center">受付状況</th>
-              <th class="py-3 px-3 sm:px-4 text-center">弁当券</th>
-              <th class="py-3 px-3 sm:px-4 text-center">弁当実物</th>
-              <th class="py-3 px-3 sm:px-4 text-center">参加費</th>
-              <th class="py-3 px-3 sm:px-4 text-center">クローク</th>
-              <th class="py-3 px-3 sm:px-4 text-center">受付種別</th>
-              <th class="py-3 px-3 sm:px-4">最終更新</th>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider select-none sticky top-0 z-30">
+              <th class="sticky-col-no py-3 px-1 text-center w-11">No</th>
+              <th class="sticky-col-name py-3 px-3 sm:px-4 min-w-[140px] sm:min-w-[180px]">氏名 (フリガナ)</th>
+              <th class="py-3 px-3 sm:px-4 min-w-[140px]">所属 / 役職</th>
+              <th class="py-3 px-3 sm:px-4 text-center whitespace-nowrap">受付状況</th>
+              <th class="py-3 px-3 sm:px-4 text-center whitespace-nowrap">弁当券</th>
+              <th class="py-3 px-3 sm:px-4 text-center whitespace-nowrap">弁当実物</th>
+              <th class="py-3 px-3 sm:px-4 text-center whitespace-nowrap">参加費</th>
+              <th class="py-3 px-3 sm:px-4 text-center whitespace-nowrap">クローク</th>
+              <th class="py-3 px-3 sm:px-4 text-center whitespace-nowrap">受付種別</th>
+              <th class="py-3 px-3 sm:px-4 min-w-[120px]">最終更新</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 font-medium">
@@ -647,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 表形式の1行HTML生成
+   * 表形式の1行HTML生成（No列と氏名列にStickyクラスを適用）
    */
   function createParticipantTableRowHtml(participant, index) {
     const isCheckedIn = participant.checkedIn;
@@ -682,17 +682,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 参加費ステータスバッジ
     let feeBadgeHtml = '';
     if (isFeePaid) {
-      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-violet-100 text-violet-800 border border-violet-300">事前支払済</span>';
+      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-violet-100 text-violet-800 border border-violet-300 whitespace-nowrap">事前支払済</span>';
     } else if (isFeeConfirmed) {
-      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">当日受領済</span>';
+      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap">当日受領済</span>';
     } else {
-      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500">未受領</span>';
+      feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 whitespace-nowrap">未受領</span>';
     }
 
     // クローク利用バッジ
     let cloakBadgeHtml = '';
     if (isCloakUsed) {
-      cloakBadgeHtml = '<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200">利用有</span>';
+      cloakBadgeHtml = '<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 whitespace-nowrap">利用有</span>';
     } else {
       cloakBadgeHtml = '<span class="text-slate-400 text-xs font-normal">-</span>';
     }
@@ -700,39 +700,39 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <tr data-id="${participant.id}"
         class="participant-table-row hover:bg-indigo-50/60 active:bg-indigo-100/60 cursor-pointer transition ${isCheckedIn ? 'bg-indigo-50/20' : ''}">
-        <td class="py-3.5 px-3 sm:px-4 text-center text-slate-400 font-mono text-xs">${index}</td>
-        <td class="py-3.5 px-3 sm:px-4">
-          <div class="text-[11px] font-semibold text-slate-400">${participant.lastNameKana} ${participant.firstNameKana}</div>
-          <div class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">${participant.lastName} ${participant.firstName}</div>
+        <td class="sticky-col-no py-3.5 px-1 text-center text-slate-400 font-mono text-xs w-11">${index}</td>
+        <td class="sticky-col-name py-3.5 px-3 sm:px-4">
+          <div class="text-[11px] font-semibold text-slate-400 truncate">${participant.lastNameKana} ${participant.firstNameKana}</div>
+          <div class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight truncate">${participant.lastName} ${participant.firstName}</div>
         </td>
         <td class="py-3.5 px-3 sm:px-4">
-          <div class="text-xs sm:text-sm font-bold text-slate-700">${participant.organization || '-'}</div>
-          <div class="text-[11px] text-slate-400">${participant.position || '-'}</div>
+          <div class="text-xs sm:text-sm font-bold text-slate-700 truncate">${participant.organization || '-'}</div>
+          <div class="text-[11px] text-slate-400 truncate">${participant.position || '-'}</div>
         </td>
-        <td class="py-3.5 px-3 sm:px-4 text-center">
+        <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap">
           <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${isCheckedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
             ${isCheckedIn ? '受付済' : '未受付'}
           </span>
         </td>
-        <td class="py-3.5 px-3 sm:px-4 text-center">
+        <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap">
           ${bentoTicketBadgeHtml}
         </td>
-        <td class="py-3.5 px-3 sm:px-4 text-center">
+        <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap">
           ${bentoDeliverBadgeHtml}
         </td>
-        <td class="py-3.5 px-3 sm:px-4 text-center">
+        <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap">
           ${feeBadgeHtml}
         </td>
-        <td class="py-3.5 px-3 sm:px-4 text-center">
+        <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap">
           ${cloakBadgeHtml}
         </td>
-        <td class="py-3.5 px-3 sm:px-4 text-center">
+        <td class="py-3.5 px-3 sm:px-4 text-center whitespace-nowrap">
           ${isWalkin 
             ? '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">当日</span>'
             : '<span class="text-slate-400 text-xs font-normal">事前</span>'
           }
         </td>
-        <td class="py-3.5 px-3 sm:px-4 text-slate-400 font-mono text-[11px]">
+        <td class="py-3.5 px-3 sm:px-4 text-slate-400 font-mono text-[11px] whitespace-nowrap">
           ${participant.updatedAt || '-'}
         </td>
       </tr>
@@ -740,7 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 検索用 コンパクトカードHTML生成（余白を削り小さく最適化）
+   * 検索用 コンパクトカードHTML生成（スマホ1列・タブレット複数列に最適化）
    */
   function createCompactParticipantCardHtml(participant) {
     const isCheckedIn = participant.checkedIn;
@@ -786,8 +786,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <div data-id="${participant.id}"
-        class="participant-card touch-target bg-white rounded-xl border ${isCheckedIn ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200'} p-2.5 shadow-xs hover:shadow-md active:scale-[0.99] transition cursor-pointer flex flex-col justify-between">
-        <div>
+        class="participant-card touch-target bg-white rounded-2xl border ${isCheckedIn ? 'border-indigo-300 bg-indigo-50/20 shadow-sm' : 'border-slate-200/90 shadow-xs'} p-3 sm:p-3.5 hover:shadow-md hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer flex flex-col justify-between gap-2">
+        <div class="min-w-0">
           <div class="flex items-center justify-between mb-0.5">
             <span class="text-[11px] font-semibold text-slate-400 truncate">
               ${participant.lastNameKana} ${participant.firstNameKana}
@@ -799,13 +799,13 @@ document.addEventListener('DOMContentLoaded', () => {
             ${participant.lastName} ${participant.firstName}
           </h3>
 
-          <p class="text-xs font-medium text-slate-600 truncate mb-1.5">
+          <p class="text-xs font-medium text-slate-600 truncate">
             ${participant.organization || '-'}
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1 pt-1.5 border-t border-slate-100">
-          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isCheckedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
+        <div class="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-100">
+          <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isCheckedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
             ${isCheckedIn ? '受付済' : '未受付'}
           </span>
           ${bentoTicketBadge}

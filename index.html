@@ -59,25 +59,25 @@
 
   <!-- トップナビゲーションバー -->
   <header class="glass-header sticky top-0 z-30 border-b border-slate-200/80 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between">
       <!-- タイトル & 大会名 -->
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
         </div>
-        <div>
-          <div class="text-[11px] font-bold text-indigo-600 tracking-tight leading-tight conference-name">教職員研究大会</div>
-          <h1 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight leading-tight">来場者照合・受付管理</h1>
+        <div class="min-w-0">
+          <div class="text-[10px] sm:text-[11px] font-bold text-indigo-600 tracking-tight leading-tight conference-name truncate">教職員研究大会</div>
+          <h1 class="text-sm sm:text-lg font-extrabold text-slate-900 tracking-tight leading-tight truncate">来場者照合・受付管理</h1>
         </div>
       </div>
 
       <!-- 右側アクション（最終同期時刻、同期ボタン、当日受付リンク） -->
-      <div class="flex items-center space-x-2.5 sm:space-x-3">
-        <!-- 最終同期時刻表示（オンライン表示のあった位置に移動） -->
-        <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 text-xs font-semibold text-slate-600">
-          <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
+        <!-- 最終同期時刻表示 -->
+        <div class="flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 text-[11px] sm:text-xs font-semibold text-slate-600">
+          <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span id="lastSyncText">未同期</span>
@@ -85,7 +85,7 @@
 
         <!-- データ同期ボタン -->
         <button type="button" id="syncButton"
-          class="touch-target px-3.5 sm:px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 active:scale-95 transition">
+          class="touch-target px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs sm:text-sm shadow-sm flex items-center space-x-1 sm:space-x-1.5 active:scale-95 transition cursor-pointer">
           <svg id="syncSpinner" class="hidden animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -93,16 +93,17 @@
           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span>同期</span>
+          <span class="hidden sm:inline">同期</span>
         </button>
 
         <!-- 当日受付フォームへのクイックリンク -->
         <a href="./walkin.html" target="_blank"
-          class="touch-target px-3 sm:px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs sm:text-sm flex items-center space-x-1.5 transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          class="touch-target px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs sm:text-sm flex items-center space-x-1 sm:space-x-1.5 transition">
+          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           <span class="hidden sm:inline">当日受付</span>
+          <span class="sm:hidden">当日</span>
         </a>
       </div>
     </div>
@@ -120,42 +121,42 @@
       </div>
     </div>
 
-    <!-- リアルタイム受付統計ダッシュボードバー -->
-    <div class="bg-white border-t border-slate-200/80 px-4 sm:px-6 py-2.5">
-      <div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 text-center">
+    <!-- リアルタイム受付統計ダッシュボードバー（スマホ横スワイプ可能 / タブレット・PCグリッド展開） -->
+    <div class="bg-white border-t border-slate-200/80 px-3 sm:px-6 py-2">
+      <div class="max-w-7xl mx-auto flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-2.5 text-center snap-x snap-mandatory">
         <!-- 1. 総参加予定 -->
-        <div class="bg-slate-50 p-2 sm:p-2.5 rounded-xl border border-slate-200/60">
-          <p class="text-[11px] sm:text-xs font-semibold text-slate-500">総登録数</p>
+        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-slate-50 p-2 rounded-xl border border-slate-200/60">
+          <p class="text-[10px] sm:text-xs font-semibold text-slate-500 whitespace-nowrap">総登録数</p>
           <p id="statTotal" class="text-base sm:text-xl font-black text-slate-800">0</p>
         </div>
         <!-- 2. 受付済み -->
-        <div class="bg-emerald-50/80 p-2 sm:p-2.5 rounded-xl border border-emerald-200/60">
-          <p class="text-[11px] sm:text-xs font-bold text-emerald-700">受付済 <span id="statCheckedInPercent" class="text-[10px] text-emerald-600 font-normal"></span></p>
+        <div class="flex-shrink-0 w-28 sm:w-auto snap-start bg-emerald-50/80 p-2 rounded-xl border border-emerald-200/60">
+          <p class="text-[10px] sm:text-xs font-bold text-emerald-700 whitespace-nowrap">受付済 <span id="statCheckedInPercent" class="text-[10px] text-emerald-600 font-normal"></span></p>
           <p id="statCheckedIn" class="text-base sm:text-xl font-black text-emerald-800">0</p>
         </div>
         <!-- 3. 弁当券引換 -->
-        <div class="bg-indigo-50/80 p-2 sm:p-2.5 rounded-xl border border-indigo-200/60">
-          <p class="text-[11px] sm:text-xs font-bold text-indigo-700">弁当券引換</p>
+        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-indigo-50/80 p-2 rounded-xl border border-indigo-200/60">
+          <p class="text-[10px] sm:text-xs font-bold text-indigo-700 whitespace-nowrap">弁当券引換</p>
           <p id="statBento" class="text-base sm:text-xl font-black text-indigo-800">0</p>
         </div>
         <!-- 4. 弁当引換（実物） -->
-        <div class="bg-orange-50/80 p-2 sm:p-2.5 rounded-xl border border-orange-200/60">
-          <p class="text-[11px] sm:text-xs font-bold text-orange-700">弁当引換</p>
+        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-orange-50/80 p-2 rounded-xl border border-orange-200/60">
+          <p class="text-[10px] sm:text-xs font-bold text-orange-700 whitespace-nowrap">弁当引換</p>
           <p id="statBentoDeliver" class="text-base sm:text-xl font-black text-orange-800">0</p>
         </div>
         <!-- 5. 参加費支払 -->
-        <div class="bg-violet-50/80 p-2 sm:p-2.5 rounded-xl border border-violet-200/60">
-          <p class="text-[11px] sm:text-xs font-bold text-violet-700">参加費受領</p>
+        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-violet-50/80 p-2 rounded-xl border border-violet-200/60">
+          <p class="text-[10px] sm:text-xs font-bold text-violet-700 whitespace-nowrap">参加費受領</p>
           <p id="statFee" class="text-base sm:text-xl font-black text-violet-800">0</p>
         </div>
         <!-- 6. クローク利用 -->
-        <div class="bg-purple-50/80 p-2 sm:p-2.5 rounded-xl border border-purple-200/60">
-          <p class="text-[11px] sm:text-xs font-bold text-purple-700">クローク利用</p>
+        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-purple-50/80 p-2 rounded-xl border border-purple-200/60">
+          <p class="text-[10px] sm:text-xs font-bold text-purple-700 whitespace-nowrap">クローク利用</p>
           <p id="statCloak" class="text-base sm:text-xl font-black text-purple-800">0</p>
         </div>
         <!-- 7. 当日受付 -->
-        <div class="bg-amber-50/80 p-2 sm:p-2.5 rounded-xl border border-amber-200/60">
-          <p class="text-[11px] sm:text-xs font-bold text-amber-700">当日受付</p>
+        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-amber-50/80 p-2 rounded-xl border border-amber-200/60">
+          <p class="text-[10px] sm:text-xs font-bold text-amber-700 whitespace-nowrap">当日受付</p>
           <p id="statWalkin" class="text-base sm:text-xl font-black text-amber-800">0</p>
         </div>
       </div>
@@ -165,18 +166,18 @@
   <!-- メインコンテンツエリア -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col">
 
-    <!-- タブ切り替え（検索 / 一覧） -->
-    <div class="flex border-b border-slate-300 mb-4">
+    <!-- タブ切り替え（検索 / 一覧）スマホ時に幅均等配分 -->
+    <div class="flex border-b border-slate-300 mb-3 sm:mb-4">
       <button type="button" id="tabSearch"
-        class="touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        class="touch-target flex-1 sm:flex-initial py-2.5 px-3 sm:px-6 text-xs sm:text-base font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center justify-center space-x-1.5 sm:space-x-2 transition">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <span>検索照合（カナ検索）</span>
+        <span>検索照合 (カナ検索)</span>
       </button>
       <button type="button" id="tabList"
-        class="touch-target py-2.5 px-5 text-sm sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        class="touch-target flex-1 sm:flex-initial py-2.5 px-3 sm:px-6 text-xs sm:text-base font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center justify-center space-x-1.5 sm:space-x-2 transition">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
         </svg>
         <span>全参加者一覧</span>
@@ -186,15 +187,15 @@
     <!-- 1. 検索タブセクション -->
     <section id="searchSection" class="flex-1 flex flex-col space-y-3">
       <!-- 検索入力バー -->
-      <div class="relative bg-white rounded-xl shadow-sm border border-slate-200 p-2 sm:p-2.5 flex items-center">
-        <div class="pl-2.5 pr-2 text-indigo-600">
+      <div class="relative bg-white rounded-2xl shadow-sm border border-slate-200/90 p-2 sm:p-2.5 flex items-center">
+        <div class="pl-2 pr-2 text-indigo-600 flex-shrink-0">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        <input type="text" id="searchInput" placeholder="姓・名のフリガナ（例: ヤマダ）、漢字氏名、または学校名で検索"
-          class="w-full text-sm sm:text-base font-bold text-slate-900 placeholder-slate-400 outline-none bg-transparent py-1.5 px-1">
-        <button type="button" id="clearSearchButton" title="検索条件をクリア" aria-label="検索条件をクリア" class="hidden p-1.5 text-slate-400 hover:text-slate-600 rounded-full">
+        <input type="text" id="searchInput" placeholder="フリガナ（例: ヤマダ）、漢字氏名、または学校名で検索"
+          class="w-full text-base font-bold text-slate-900 placeholder-slate-400 outline-none bg-transparent py-1.5 px-1">
+        <button type="button" id="clearSearchButton" title="検索条件をクリア" aria-label="検索条件をクリア" class="hidden p-2 text-slate-400 hover:text-slate-600 rounded-full flex-shrink-0">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -207,38 +208,38 @@
         <span>カードをタップして詳細確認・受付更新</span>
       </div>
 
-      <!-- 検索結果グリッド（コンパクトなカード配置） -->
-      <div id="searchResultsContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 flex-1">
+      <!-- 検索結果グリッド（スマホは1列フル幅、タブレット2〜3列、PC4列） -->
+      <div id="searchResultsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 flex-1">
         <!-- 初期状態プレースホルダー（JSで描画） -->
       </div>
     </section>
 
     <!-- 2. 一覧タブセクション（初期非表示） -->
     <section id="listSection" class="hidden flex-1 flex flex-col space-y-3">
-      <!-- 絞り込みフィルターボタングループ -->
-      <div class="flex flex-wrap items-center gap-2">
-        <button type="button" data-filter="all" class="filter-btn active touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+      <!-- 絞り込みフィルターボタングループ（スマホ時は横スクロール、タブレット以上でフレックス） -->
+      <div class="flex overflow-x-auto no-scrollbar sm:flex-wrap items-center gap-1.5 sm:gap-2 pb-1 sm:pb-0">
+        <button type="button" data-filter="all" class="filter-btn active touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           すべて
         </button>
-        <button type="button" data-filter="unregistered" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+        <button type="button" data-filter="unregistered" class="filter-btn touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           未受付
         </button>
-        <button type="button" data-filter="registered" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+        <button type="button" data-filter="registered" class="filter-btn touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           受付済
         </button>
-        <button type="button" data-filter="walkin" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+        <button type="button" data-filter="walkin" class="filter-btn touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           当日受付のみ
         </button>
-        <button type="button" data-filter="bento_pending" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+        <button type="button" data-filter="bento_pending" class="filter-btn touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           弁当券未引換
         </button>
-        <button type="button" data-filter="bento_deliver_pending" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+        <button type="button" data-filter="bento_deliver_pending" class="filter-btn touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           弁当未引換
         </button>
-        <button type="button" data-filter="fee_pending" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+        <button type="button" data-filter="fee_pending" class="filter-btn touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           参加費未受領
         </button>
-        <button type="button" data-filter="cloak_using" class="filter-btn touch-target px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
+        <button type="button" data-filter="cloak_using" class="filter-btn touch-target flex-shrink-0 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold">
           クローク利用中
         </button>
       </div>
@@ -246,7 +247,10 @@
       <!-- 一覧件数情報 -->
       <div class="flex justify-between items-center px-1 text-xs sm:text-sm font-semibold text-slate-500">
         <span>表示件数: <span id="listResultCount" class="text-indigo-600 font-bold">0件</span></span>
-        <span class="text-xs text-slate-400">行をタップして詳細確認・更新</span>
+        <span class="text-xs text-slate-400 flex items-center space-x-1">
+          <span class="sm:hidden">← 横スクロール可 →</span>
+          <span class="hidden sm:inline">行をタップして詳細確認・更新</span>
+        </span>
       </div>
 
       <!-- 一覧テーブルコンテナ（スプレッドシート風 表形式 Table） -->
@@ -258,69 +262,73 @@
   </main>
 
   <!-- 3. 詳細・ステータス更新モーダル -->
-  <div id="detailModal" class="hidden fixed inset-0 z-50 overflow-y-auto overscroll-behavior-contain">
+  <div id="detailModal" class="hidden fixed inset-0 z-50 overflow-y-auto overscroll-behavior-contain p-2 sm:p-4 flex items-center justify-center">
     <!-- バックドロップ -->
     <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
 
-    <!-- モーダル本体 -->
-    <div class="min-h-full flex items-center justify-center p-3 sm:p-6">
-      <div id="modalContent" class="relative bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-slate-200 animate-modal-pop z-10">
+    <!-- モーダル本体（max-h-[92vh] flex flex-col でヘッダー・フッター固定、中身スクロール可能） -->
+    <div id="modalContent" class="relative bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 animate-modal-pop z-10 overflow-hidden">
 
+      <!-- モーダル固定ヘッダー（氏名・所属・クローズボタン） -->
+      <div class="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-100 flex-shrink-0 relative">
         <!-- クローズボタン (大きな×ボタン) -->
         <button type="button" id="modalCloseButton" title="詳細モーダルを閉じる" aria-label="詳細モーダルを閉じる"
-          class="absolute top-4 right-4 touch-target p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          class="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 touch-target p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition cursor-pointer">
+          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <!-- モーダルヘッダー（氏名・所属） -->
-        <div class="pr-10 mb-4">
+        <!-- 氏名・フリガナ・所属 -->
+        <div class="pr-10">
           <div class="flex items-center space-x-2 mb-0.5">
             <span id="modalKana" class="text-xs sm:text-sm font-bold text-indigo-600 tracking-wider">ヤマダ タロウ</span>
             <span id="modalWalkinBadge" class="hidden px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
               当日受付
             </span>
           </div>
-          <h2 id="modalName" class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">山田 太郎</h2>
-          <p class="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5">
+          <h2 id="modalName" class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">山田 太郎</h2>
+          <p class="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5 truncate">
             <span id="modalOrg">-</span> <span class="text-slate-400">/</span> <span id="modalPosition">-</span>
           </p>
         </div>
+      </div>
 
+      <!-- モーダル内部スクロール可能ボディ -->
+      <div class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3.5">
         <!-- 5大ステータス更新トグルボタン -->
-        <div class="space-y-2 mb-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+        <div class="space-y-2 p-3 sm:p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
           <div class="flex items-center justify-between">
             <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">ステータス更新</p>
             <span class="text-[11px] text-indigo-600 font-semibold">※閉じる時にまとめて保存されます</span>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
             <!-- 1. 受付状況 -->
-            <button type="button" id="toggleCheckinBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1.5">
+            <button type="button" id="toggleCheckinBtn" class="touch-target py-3 px-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1 cursor-pointer">
               <span>未受付</span>
             </button>
             <!-- 2. 弁当券引換 -->
-            <button type="button" id="toggleBentoBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1.5">
+            <button type="button" id="toggleBentoBtn" class="touch-target py-3 px-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1 cursor-pointer">
               <span>弁当券未引換</span>
             </button>
             <!-- 3. 弁当引換（実物） -->
-            <button type="button" id="toggleBentoDeliverBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1.5">
+            <button type="button" id="toggleBentoDeliverBtn" class="touch-target py-3 px-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1 cursor-pointer">
               <span>弁当未引換</span>
             </button>
             <!-- 4. 参加費支払 -->
-            <button type="button" id="toggleFeeBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1.5">
+            <button type="button" id="toggleFeeBtn" class="touch-target py-3 px-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1 cursor-pointer">
               <span>未受領</span>
             </button>
             <!-- 5. クローク利用 -->
-            <button type="button" id="toggleCloakBtn" class="touch-target py-3 px-3 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1.5 col-span-2 sm:col-span-1">
+            <button type="button" id="toggleCloakBtn" class="touch-target py-3 px-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1 col-span-2 sm:col-span-1 cursor-pointer">
               <span>クローク未利用</span>
             </button>
           </div>
         </div>
 
         <!-- 参加者詳細情報グリッド（スプレッドシートデータ参照 & ステータス明記） -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs bg-white rounded-2xl border border-slate-200/80 p-3.5 mb-3.5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 text-xs bg-white rounded-2xl border border-slate-200/80 p-3 sm:p-3.5">
           <!-- 追加された重要ステータス情報 -->
           <div class="bg-slate-50 p-2 rounded-lg">
             <span class="text-slate-400 block font-medium">受付状況</span>
@@ -386,22 +394,22 @@
         </div>
 
         <!-- 連絡・要望 -->
-        <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-2.5 mb-3.5 text-xs">
+        <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-2.5 text-xs">
           <span class="text-amber-800 font-bold block mb-0.5">連絡・要望事項</span>
-          <p id="modalNotes" class="text-slate-700 font-medium whitespace-pre-wrap">-</p>
+          <p id="modalNotes" class="text-slate-700 font-medium whitespace-pre-wrap text-xs">-</p>
         </div>
-
-        <!-- フッター閉じる・確定ボタン -->
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-slate-100">
-          <span class="text-[11px] text-slate-400 font-medium text-center sm:text-left">※変更内容は「確定して閉じる」または「✕」でデータベースに保存されます</span>
-          <button type="button" id="modalFooterCloseButton"
-            class="touch-target w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-extrabold text-xs sm:text-sm shadow-sm transition flex items-center justify-center space-x-1.5 cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-            <span>確定して閉じる</span>
-          </button>
-        </div>
-
       </div>
+
+      <!-- モーダル固定フッター（確定して閉じるボタン） -->
+      <div class="p-3 sm:p-4 bg-slate-50/80 border-t border-slate-200 flex-shrink-0 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span class="text-[11px] text-slate-500 font-medium text-center sm:text-left">※変更内容は「確定して閉じる」または「✕」でデータベースに保存されます</span>
+        <button type="button" id="modalFooterCloseButton"
+          class="touch-target w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-1.5 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <span>確定して閉じる</span>
+        </button>
+      </div>
+
     </div>
   </div>
 
