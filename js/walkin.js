@@ -236,6 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
       bentoConfirmed: false,
       feePaid: false,
       feeConfirmed: false,
+      bentoDelivered: false,
+      cloakUsed: false,
     };
 
     setSubmittingState(true);

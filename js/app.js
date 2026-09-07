@@ -41,7 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
     statCheckedIn: document.getElementById('statCheckedIn'),
     statCheckedInPercent: document.getElementById('statCheckedInPercent'),
     statBento: document.getElementById('statBento'),
+    statBentoDeliver: document.getElementById('statBentoDeliver'),
     statFee: document.getElementById('statFee'),
+    statCloak: document.getElementById('statCloak'),
     statWalkin: document.getElementById('statWalkin'),
 
     // タブ
@@ -66,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     modalBackdrop: document.getElementById('modalBackdrop'),
     modalContent: document.getElementById('modalContent'),
     modalCloseButton: document.getElementById('modalCloseButton'),
+    modalFooterCloseButton: document.getElementById('modalFooterCloseButton'),
     modalName: document.getElementById('modalName'),
     modalKana: document.getElementById('modalKana'),
     modalOrg: document.getElementById('modalOrg'),
@@ -85,12 +88,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // モーダル内ステータス詳細表示
     modalStatusCheckin: document.getElementById('modalStatusCheckin'),
     modalStatusBento: document.getElementById('modalStatusBento'),
+    modalStatusBentoDeliver: document.getElementById('modalStatusBentoDeliver'),
     modalStatusFee: document.getElementById('modalStatusFee'),
+    modalStatusCloak: document.getElementById('modalStatusCloak'),
+    modalStatusBentoOrder: document.getElementById('modalStatusBentoOrder'),
 
     // モーダル内ステータストグルボタン
     toggleCheckinBtn: document.getElementById('toggleCheckinBtn'),
     toggleBentoBtn: document.getElementById('toggleBentoBtn'),
+    toggleBentoDeliverBtn: document.getElementById('toggleBentoDeliverBtn'),
     toggleFeeBtn: document.getElementById('toggleFeeBtn'),
+    toggleCloakBtn: document.getElementById('toggleCloakBtn'),
   };
 
   /**
@@ -338,11 +346,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateStatistics() {
     const total = state.participants.length;
     const checkedIn = state.participants.filter((p) => p.checkedIn).length;
-    // 弁当事前注文者数と引換済数
+    // 弁当事前注文者数と弁当券引換済数
     const bentoOrderedTotal = state.participants.filter((p) => p.bentoOrdered).length;
     const bentoConfirmed = state.participants.filter((p) => p.bentoOrdered && (p.bentoConfirmed || p.bentoExchanged)).length;
+    // 弁当実物引換済数
+    const bentoDelivered = state.participants.filter((p) => p.bentoOrdered && p.bentoDelivered).length;
     // 参加費受領済（事前支払 または 当日受領）
     const fee = state.participants.filter((p) => p.feePaid || p.feeConfirmed).length;
+    // クローク利用数
+    const cloak = state.participants.filter((p) => p.cloakUsed).length;
     const walkin = state.participants.filter((p) => p.isWalkin).length;
 
     const percent = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
@@ -351,7 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.statCheckedIn) elements.statCheckedIn.textContent = checkedIn;
     if (elements.statCheckedInPercent) elements.statCheckedInPercent.textContent = `(${percent}%)`;
     if (elements.statBento) elements.statBento.textContent = `${bentoConfirmed} / ${bentoOrderedTotal}`;
+    if (elements.statBentoDeliver) elements.statBentoDeliver.textContent = `${bentoDelivered} / ${bentoOrderedTotal}`;
     if (elements.statFee) elements.statFee.textContent = fee;
+    if (elements.statCloak) elements.statCloak.textContent = cloak;
     if (elements.statWalkin) elements.statWalkin.textContent = walkin;
   }
 
@@ -564,12 +578,20 @@ document.addEventListener('DOMContentLoaded', () => {
         list = list.filter((p) => p.isWalkin);
         break;
       case 'bento_pending':
-        // 弁当事前注文あり かつ 未引換の人
+        // 弁当事前注文あり かつ 弁当券未引換の人
         list = list.filter((p) => p.bentoOrdered && !(p.bentoConfirmed || p.bentoExchanged));
+        break;
+      case 'bento_deliver_pending':
+        // 弁当事前注文あり かつ 弁当実物未引換の人
+        list = list.filter((p) => p.bentoOrdered && !p.bentoDelivered);
         break;
       case 'fee_pending':
         // 事前支払でも当日受領でもない人
         list = list.filter((p) => !p.feePaid && !p.feeConfirmed);
+        break;
+      case 'cloak_using':
+        // クローク利用中の人
+        list = list.filter((p) => p.cloakUsed);
         break;
     }
 
@@ -594,8 +616,10 @@ document.addEventListener('DOMContentLoaded', () => {
               <th class="py-3 px-3 sm:px-4">氏名 (フリガナ)</th>
               <th class="py-3 px-3 sm:px-4">所属 / 役職</th>
               <th class="py-3 px-3 sm:px-4 text-center">受付状況</th>
-              <th class="py-3 px-3 sm:px-4 text-center">弁当引換</th>
+              <th class="py-3 px-3 sm:px-4 text-center">弁当券</th>
+              <th class="py-3 px-3 sm:px-4 text-center">弁当実物</th>
               <th class="py-3 px-3 sm:px-4 text-center">参加費</th>
+              <th class="py-3 px-3 sm:px-4 text-center">クローク</th>
               <th class="py-3 px-3 sm:px-4 text-center">受付種別</th>
               <th class="py-3 px-3 sm:px-4">最終更新</th>
             </tr>
@@ -617,18 +641,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCheckedIn = participant.checkedIn;
     const isBentoOrdered = participant.bentoOrdered;
     const isBentoConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
+    const isBentoDelivered = participant.bentoDelivered;
     const isFeePaid = participant.feePaid;
     const isFeeConfirmed = participant.feeConfirmed;
+    const isCloakUsed = participant.cloakUsed;
     const isWalkin = participant.isWalkin;
 
-    // 弁当引換ステータスバッジ
-    let bentoBadgeHtml = '';
+    // 弁当券引換ステータスバッジ
+    let bentoTicketBadgeHtml = '';
     if (!isBentoOrdered) {
-      bentoBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 bg-slate-100">注文なし</span>';
+      bentoTicketBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 bg-slate-100">注文無</span>';
     } else if (isBentoConfirmed) {
-      bentoBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200">引換済</span>';
+      bentoTicketBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200">引換済</span>';
     } else {
-      bentoBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200">未引換</span>';
+      bentoTicketBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200">未引換</span>';
+    }
+
+    // 弁当実物引換ステータスバッジ
+    let bentoDeliverBadgeHtml = '';
+    if (!isBentoOrdered) {
+      bentoDeliverBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 bg-slate-100">-</span>';
+    } else if (isBentoDelivered) {
+      bentoDeliverBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-orange-700 bg-orange-50 border border-orange-200">引換済</span>';
+    } else {
+      bentoDeliverBadgeHtml = '<span class="px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200">未引換</span>';
     }
 
     // 参加費ステータスバッジ
@@ -639,6 +675,14 @@ document.addEventListener('DOMContentLoaded', () => {
       feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">当日受領済</span>';
     } else {
       feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500">未受領</span>';
+    }
+
+    // クローク利用バッジ
+    let cloakBadgeHtml = '';
+    if (isCloakUsed) {
+      cloakBadgeHtml = '<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200">利用有</span>';
+    } else {
+      cloakBadgeHtml = '<span class="text-slate-400 text-xs font-normal">-</span>';
     }
 
     return `
@@ -659,10 +703,16 @@ document.addEventListener('DOMContentLoaded', () => {
           </span>
         </td>
         <td class="py-3.5 px-3 sm:px-4 text-center">
-          ${bentoBadgeHtml}
+          ${bentoTicketBadgeHtml}
+        </td>
+        <td class="py-3.5 px-3 sm:px-4 text-center">
+          ${bentoDeliverBadgeHtml}
         </td>
         <td class="py-3.5 px-3 sm:px-4 text-center">
           ${feeBadgeHtml}
+        </td>
+        <td class="py-3.5 px-3 sm:px-4 text-center">
+          ${cloakBadgeHtml}
         </td>
         <td class="py-3.5 px-3 sm:px-4 text-center">
           ${isWalkin 
@@ -684,17 +734,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCheckedIn = participant.checkedIn;
     const isBentoOrdered = participant.bentoOrdered;
     const isBentoConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
+    const isBentoDelivered = participant.bentoDelivered;
     const isFeePaid = participant.feePaid;
     const isFeeConfirmed = participant.feeConfirmed;
+    const isCloakUsed = participant.cloakUsed;
     const isWalkin = participant.isWalkin;
 
-    let bentoBadge = '';
+    let bentoTicketBadge = '';
     if (!isBentoOrdered) {
-      bentoBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-400">弁当無</span>';
+      bentoTicketBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-400">弁当無</span>';
     } else if (isBentoConfirmed) {
-      bentoBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">弁当済</span>';
+      bentoTicketBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">券済</span>';
     } else {
-      bentoBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">弁当未</span>';
+      bentoTicketBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">券未</span>';
+    }
+
+    let bentoDeliverBadge = '';
+    if (isBentoOrdered) {
+      if (isBentoDelivered) {
+        bentoDeliverBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">弁当済</span>';
+      } else {
+        bentoDeliverBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">弁当未</span>';
+      }
     }
 
     let feeBadge = '';
@@ -704,6 +765,11 @@ document.addEventListener('DOMContentLoaded', () => {
       feeBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">受領済</span>';
     } else {
       feeBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500">未受領</span>';
+    }
+
+    let cloakBadge = '';
+    if (isCloakUsed) {
+      cloakBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">クローク有</span>';
     }
 
     return `
@@ -730,8 +796,10 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isCheckedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
             ${isCheckedIn ? '受付済' : '未受付'}
           </span>
-          ${bentoBadge}
+          ${bentoTicketBadge}
+          ${bentoDeliverBadge}
           ${feeBadge}
+          ${cloakBadge}
         </div>
       </div>
     `;
@@ -765,19 +833,30 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.modalStatusCheckin.className = participant.checkedIn ? 'font-bold text-emerald-600' : 'font-bold text-slate-500';
     }
 
-    // 2. 弁当事前注文・引換状況（テキスト・色）
+    // 2. 弁当券引換状況（テキスト・色）
     if (elements.modalStatusBento) {
       if (!participant.bentoOrdered) {
-        elements.modalStatusBento.textContent = 'なし';
+        elements.modalStatusBento.textContent = '注文なし';
         elements.modalStatusBento.className = 'font-bold text-slate-400';
       } else {
         const isConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
-        elements.modalStatusBento.textContent = isConfirmed ? 'あり（引換済）' : 'あり（未引換）';
+        elements.modalStatusBento.textContent = isConfirmed ? '引換済' : '未引換';
         elements.modalStatusBento.className = isConfirmed ? 'font-bold text-indigo-600' : 'font-bold text-amber-600';
       }
     }
 
-    // 3. 参加費状況（テキスト・色）
+    // 3. 弁当実物引換状況（テキスト・色）
+    if (elements.modalStatusBentoDeliver) {
+      if (!participant.bentoOrdered) {
+        elements.modalStatusBentoDeliver.textContent = '注文なし';
+        elements.modalStatusBentoDeliver.className = 'font-bold text-slate-400';
+      } else {
+        elements.modalStatusBentoDeliver.textContent = participant.bentoDelivered ? '引換済' : '未引換';
+        elements.modalStatusBentoDeliver.className = participant.bentoDelivered ? 'font-bold text-orange-600' : 'font-bold text-amber-600';
+      }
+    }
+
+    // 4. 参加費状況（テキスト・色）
     if (elements.modalStatusFee) {
       if (participant.feePaid) {
         elements.modalStatusFee.textContent = '事前支払済';
@@ -791,12 +870,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 4. 最終更新日時
+    // 5. クローク利用（テキスト・色）
+    if (elements.modalStatusCloak) {
+      elements.modalStatusCloak.textContent = participant.cloakUsed ? '利用有（荷物預かり中）' : '利用なし';
+      elements.modalStatusCloak.className = participant.cloakUsed ? 'font-bold text-purple-600' : 'font-bold text-slate-500';
+    }
+
+    // 6. 弁当事前注文有無（テキスト・色）
+    if (elements.modalStatusBentoOrder) {
+      elements.modalStatusBentoOrder.textContent = participant.bentoOrdered ? '事前注文あり' : '事前注文なし';
+      elements.modalStatusBentoOrder.className = participant.bentoOrdered ? 'font-bold text-indigo-600' : 'font-bold text-slate-400';
+    }
+
+    // 7. 最終更新日時
     if (elements.modalUpdatedAt) {
       elements.modalUpdatedAt.textContent = participant.updatedAt || '-';
     }
 
-    // 5. 当日受付バッジ
+    // 8. 当日受付バッジ
     if (elements.modalWalkinBadge) {
       if (participant.isWalkin) {
         elements.modalWalkinBadge.classList.remove('hidden');
@@ -836,13 +927,17 @@ document.addEventListener('DOMContentLoaded', () => {
     updateModalToggleButtons(participant);
   }
 
+  // モーダル表示中の変更追跡フラグ
+  let hasModalChanges = false;
+
   /**
    * 詳細モーダルを開く
    */
   function openDetailModal(participant) {
     state.selectedParticipant = participant;
     currentModalParticipantId = participant.id; // 現在開いている参加者IDをセット
-    state.isUpdatingStatus = false; // ★ 開いた瞬間にロックフラグを必ずリセット
+    hasModalChanges = false; // モーダル内の変更フラグを初期化
+    state.isUpdatingStatus = false;
     updateModalUI(participant);
 
     elements.detailModal?.classList.remove('hidden');
@@ -857,15 +952,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. 受付状況 (R列)
     if (elements.toggleCheckinBtn) {
-      elements.toggleCheckinBtn.disabled = false; // ★ 必ず操作可能状態に復帰
+      elements.toggleCheckinBtn.disabled = false;
       if (participant.checkedIn) {
-        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
         elements.toggleCheckinBtn.innerHTML = `
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
           <span>受付済</span>
         `;
       } else {
-        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+        elements.toggleCheckinBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
         elements.toggleCheckinBtn.innerHTML = `
           <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
           <span>未受付</span>
@@ -873,7 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 2. 弁当引換 (S列: 注文有無, W列: 引換確認)
+    // 2. 弁当券引換 (S列: 注文有無, W列: 引換確認)
     if (elements.toggleBentoBtn) {
       if (!participant.bentoOrdered) {
         // 事前注文なしの場合は無効化表示
@@ -887,13 +982,13 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.toggleBentoBtn.disabled = false;
         const isConfirmed = participant.bentoConfirmed || participant.bentoExchanged;
         if (isConfirmed) {
-          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-indigo-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleBentoBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <span>弁当券引換済</span>
           `;
         } else {
-          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleBentoBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleBentoBtn.innerHTML = `
             <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
             <span>弁当券未引換</span>
@@ -902,7 +997,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 3. 参加費支払 (T列: 事前支払有無, X列: 参加費支払確認)
+    // 3. 弁当引換（実物） (S列: 注文有無, Y列: 実物引換確認)
+    if (elements.toggleBentoDeliverBtn) {
+      if (!participant.bentoOrdered) {
+        elements.toggleBentoDeliverBtn.disabled = true;
+        elements.toggleBentoDeliverBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-50 text-slate-400 font-bold text-xs border border-dashed border-slate-300 cursor-not-allowed flex items-center justify-center';
+        elements.toggleBentoDeliverBtn.innerHTML = `
+          <span>弁当注文なし</span>
+        `;
+      } else {
+        elements.toggleBentoDeliverBtn.disabled = false;
+        if (participant.bentoDelivered) {
+          elements.toggleBentoDeliverBtn.className = 'touch-target py-3 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-orange-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleBentoDeliverBtn.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>弁当引換済</span>
+          `;
+        } else {
+          elements.toggleBentoDeliverBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleBentoDeliverBtn.innerHTML = `
+            <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
+            <span>弁当未引換</span>
+          `;
+        }
+      }
+    }
+
+    // 4. 参加費支払 (T列: 事前支払有無, X列: 参加費支払確認)
     if (elements.toggleFeeBtn) {
       if (participant.feePaid) {
         // T列がTRUE（事前支払済）の場合はボタンを押せないようにする
@@ -916,13 +1037,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // T列がFALSEの場合: ボタンが表示され、押すとX列（feeConfirmed）が更新される
         elements.toggleFeeBtn.disabled = false;
         if (participant.feeConfirmed) {
-          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleFeeBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <span>参加費受領済</span>
           `;
         } else {
-          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
+          elements.toggleFeeBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer';
           elements.toggleFeeBtn.innerHTML = `
             <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
             <span>未受領</span>
@@ -930,99 +1051,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
+
+    // 5. クローク利用 (Z列: クローク利用有無)
+    if (elements.toggleCloakBtn) {
+      elements.toggleCloakBtn.disabled = false;
+      if (participant.cloakUsed) {
+        elements.toggleCloakBtn.className = 'touch-target py-3 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-purple-200 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer col-span-2 sm:col-span-1';
+        elements.toggleCloakBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <span>クローク利用有</span>
+        `;
+      } else {
+        elements.toggleCloakBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer col-span-2 sm:col-span-1';
+        elements.toggleCloakBtn.innerHTML = `
+          <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
+          <span>クローク未利用</span>
+        `;
+      }
+    }
   }
 
   /**
-   * モーダルを閉じる
+   * モーダルを閉じて変更内容を一括保存（バッチ書き込み）
    */
-  function closeDetailModal() {
+  async function saveAndCloseDetailModal() {
+    const participantToSave = state.selectedParticipant;
+    const needsSave = hasModalChanges && participantToSave;
+
+    // モーダルを即座に非表示にして次の操作へスムーズに移行
     elements.detailModal?.classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
     state.selectedParticipant = null;
-    currentModalParticipantId = null; // 表示中IDをnullにリセット
-    state.isUpdatingStatus = false; // ロックフラグも安全にリセット
-  }
+    currentModalParticipantId = null;
+    hasModalChanges = false;
 
-  elements.modalCloseButton?.addEventListener('click', closeDetailModal);
-  elements.modalBackdrop?.addEventListener('click', closeDetailModal);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !elements.detailModal?.classList.contains('hidden')) {
-      closeDetailModal();
-    }
-  });
-
-  /**
-   * モーダル内操作ボタンの排他ロック・解除制御（連打防止用）
-   */
-  function setModalButtonsLock(isLocked) {
-    const buttons = [
-      elements.toggleCheckinBtn,
-      elements.toggleBentoBtn,
-      elements.toggleFeeBtn,
-    ].filter(Boolean);
-
-    buttons.forEach((btn) => {
-      if (isLocked) {
-        btn.disabled = true;
-        btn.classList.add('opacity-60');
-      } else {
-        btn.disabled = false;
-        btn.classList.remove('opacity-60');
-      }
-    });
-  }
-
-  /**
-   * ステータス更新トリガー（連打防止 & 即時UI反映）
-   */
-  async function handleToggleStatus(field) {
-    if (!state.selectedParticipant || state.isUpdatingStatus) return;
-
-    state.isUpdatingStatus = true;
-    setModalButtonsLock(true);
-
-    // 安全装置: 最大2秒で必ずロック解除
-    const watchdogTimer = setTimeout(() => {
-      state.isUpdatingStatus = false;
-      if (state.selectedParticipant) {
-        updateModalToggleButtons(state.selectedParticipant);
-      }
-    }, 2000);
-
-    try {
-      const currentParticipant = state.selectedParticipant;
-
-      // 1. フィールドごとのトグル判定
-      if (field === 'checkedIn') {
-        currentParticipant.checkedIn = !currentParticipant.checkedIn;
-      } else if (field === 'bentoConfirmed') {
-        if (!currentParticipant.bentoOrdered) return;
-        const nextState = !(currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged);
-        currentParticipant.bentoConfirmed = nextState;
-        currentParticipant.bentoExchanged = nextState;
-      } else if (field === 'feeConfirmed') {
-        if (currentParticipant.feePaid) return;
-        currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
-      }
-
-      // 2. モーダル内テキスト表示と全体統計の即時更新（楽観的UI更新）
-      updateModalInfoDisplay(currentParticipant);
-      updateStatistics();
-      renderCurrentView();
-
-      // キャッシュの即時更新
-      window.queueManager?.setCachedParticipants(state.participants);
-
-      // 更新ペイロード作成
+    // 変更があった場合のみ、確定した最新ステータスを1回だけまとめてデータベースへ送信
+    if (needsSave) {
       const payload = {
-        id: currentParticipant.id,
-        checkedIn: currentParticipant.checkedIn,
-        bentoConfirmed: currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged,
-        feeConfirmed: currentParticipant.feeConfirmed,
-        rowIndex: currentParticipant.rowIndex,
+        id: participantToSave.id,
+        checkedIn: participantToSave.checkedIn,
+        bentoConfirmed: participantToSave.bentoConfirmed || participantToSave.bentoExchanged,
+        bentoDelivered: participantToSave.bentoDelivered,
+        feeConfirmed: participantToSave.feeConfirmed,
+        cloakUsed: participantToSave.cloakUsed,
+        rowIndex: participantToSave.rowIndex,
       };
 
-      // 3. 通信処理
       if (navigator.onLine) {
         try {
           const baseUrl = window.AppConfig?.apiBaseUrl || '';
@@ -1038,8 +1112,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const result = await response.json();
           if (result.success && result.data?.updatedAt) {
-            currentParticipant.updatedAt = result.data.updatedAt;
-            if (elements.modalUpdatedAt) elements.modalUpdatedAt.textContent = result.data.updatedAt;
+            participantToSave.updatedAt = result.data.updatedAt;
+            renderCurrentView(); // 最終更新日時を一覧・カードへ反映
           }
         } catch (error) {
           console.warn('[Update] API通信失敗のためオフラインキューへ退避:', error);
@@ -1048,18 +1122,63 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         window.queueManager?.enqueueUpdate(payload);
       }
-    } finally {
-      clearTimeout(watchdogTimer);
-      state.isUpdatingStatus = false;
-      if (state.selectedParticipant) {
-        updateModalToggleButtons(state.selectedParticipant);
-      }
     }
+  }
+
+  // 閉じるボタンおよびフッター確定ボタンで保存・終了（※modalBackdropのクリックは無効化）
+  elements.modalCloseButton?.addEventListener('click', saveAndCloseDetailModal);
+  elements.modalFooterCloseButton?.addEventListener('click', saveAndCloseDetailModal);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !elements.detailModal?.classList.contains('hidden')) {
+      saveAndCloseDetailModal();
+    }
+  });
+
+  /**
+   * ステータス更新トリガー（待ち時間なし・即時UI反映・ローカル変更記録）
+   */
+  function handleToggleStatus(field) {
+    if (!state.selectedParticipant) return;
+    const currentParticipant = state.selectedParticipant;
+
+    // 1. フィールドごとのトグル判定 & ダーティフラグ設定
+    if (field === 'checkedIn') {
+      currentParticipant.checkedIn = !currentParticipant.checkedIn;
+      hasModalChanges = true;
+    } else if (field === 'bentoConfirmed') {
+      if (!currentParticipant.bentoOrdered) return;
+      const nextState = !(currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged);
+      currentParticipant.bentoConfirmed = nextState;
+      currentParticipant.bentoExchanged = nextState;
+      hasModalChanges = true;
+    } else if (field === 'bentoDelivered') {
+      if (!currentParticipant.bentoOrdered) return;
+      currentParticipant.bentoDelivered = !currentParticipant.bentoDelivered;
+      hasModalChanges = true;
+    } else if (field === 'feeConfirmed') {
+      if (currentParticipant.feePaid) return;
+      currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
+      hasModalChanges = true;
+    } else if (field === 'cloakUsed') {
+      currentParticipant.cloakUsed = !currentParticipant.cloakUsed;
+      hasModalChanges = true;
+    }
+
+    // 2. モーダル内テキスト表示、トグルボタン表示、全体統計の即時更新
+    updateModalInfoDisplay(currentParticipant);
+    updateModalToggleButtons(currentParticipant);
+    updateStatistics();
+    renderCurrentView();
+
+    // 3. キャッシュの即時更新
+    window.queueManager?.setCachedParticipants(state.participants);
   }
 
   elements.toggleCheckinBtn?.addEventListener('click', () => handleToggleStatus('checkedIn'));
   elements.toggleBentoBtn?.addEventListener('click', () => handleToggleStatus('bentoConfirmed'));
+  elements.toggleBentoDeliverBtn?.addEventListener('click', () => handleToggleStatus('bentoDelivered'));
   elements.toggleFeeBtn?.addEventListener('click', () => handleToggleStatus('feeConfirmed'));
+  elements.toggleCloakBtn?.addEventListener('click', () => handleToggleStatus('cloakUsed'));
 
   /**
    * 手動データ同期ボタン
