@@ -121,41 +121,41 @@
       </div>
     </div>
 
-    <!-- リアルタイム受付統計ダッシュボードバー（スマホ横スワイプ可能 / タブレット・PCグリッド展開） -->
+    <!-- リアルタイム受付統計ダッシュボードバー（常に1行固定：iPad縦向き以下は横スクロール / 大画面PCは7列展開） -->
     <div class="bg-white border-t border-slate-200/80 px-3 sm:px-6 py-2">
-      <div class="max-w-7xl mx-auto flex overflow-x-auto no-scrollbar sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-2.5 text-center snap-x snap-mandatory">
+      <div class="max-w-7xl mx-auto flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-7 gap-2 sm:gap-2.5 text-center snap-x snap-mandatory">
         <!-- 1. 総参加予定 -->
-        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-slate-50 p-2 rounded-xl border border-slate-200/60">
+        <div class="flex-shrink-0 w-24 sm:w-28 lg:w-auto snap-start bg-slate-50 p-2 rounded-xl border border-slate-200/60">
           <p class="text-[10px] sm:text-xs font-semibold text-slate-500 whitespace-nowrap">総登録数</p>
           <p id="statTotal" class="text-base sm:text-xl font-black text-slate-800">0</p>
         </div>
         <!-- 2. 受付済み -->
-        <div class="flex-shrink-0 w-28 sm:w-auto snap-start bg-emerald-50/80 p-2 rounded-xl border border-emerald-200/60">
+        <div class="flex-shrink-0 w-28 sm:w-32 lg:w-auto snap-start bg-emerald-50/80 p-2 rounded-xl border border-emerald-200/60">
           <p class="text-[10px] sm:text-xs font-bold text-emerald-700 whitespace-nowrap">受付済 <span id="statCheckedInPercent" class="text-[10px] text-emerald-600 font-normal"></span></p>
           <p id="statCheckedIn" class="text-base sm:text-xl font-black text-emerald-800">0</p>
         </div>
         <!-- 3. 弁当券引換 -->
-        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-indigo-50/80 p-2 rounded-xl border border-indigo-200/60">
+        <div class="flex-shrink-0 w-24 sm:w-28 lg:w-auto snap-start bg-indigo-50/80 p-2 rounded-xl border border-indigo-200/60">
           <p class="text-[10px] sm:text-xs font-bold text-indigo-700 whitespace-nowrap">弁当券引換</p>
           <p id="statBento" class="text-base sm:text-xl font-black text-indigo-800">0</p>
         </div>
         <!-- 4. 弁当引換（実物） -->
-        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-orange-50/80 p-2 rounded-xl border border-orange-200/60">
+        <div class="flex-shrink-0 w-24 sm:w-28 lg:w-auto snap-start bg-orange-50/80 p-2 rounded-xl border border-orange-200/60">
           <p class="text-[10px] sm:text-xs font-bold text-orange-700 whitespace-nowrap">弁当引換</p>
           <p id="statBentoDeliver" class="text-base sm:text-xl font-black text-orange-800">0</p>
         </div>
         <!-- 5. 参加費支払 -->
-        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-violet-50/80 p-2 rounded-xl border border-violet-200/60">
+        <div class="flex-shrink-0 w-24 sm:w-28 lg:w-auto snap-start bg-violet-50/80 p-2 rounded-xl border border-violet-200/60">
           <p class="text-[10px] sm:text-xs font-bold text-violet-700 whitespace-nowrap">参加費受領</p>
           <p id="statFee" class="text-base sm:text-xl font-black text-violet-800">0</p>
         </div>
         <!-- 6. クローク利用 -->
-        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-purple-50/80 p-2 rounded-xl border border-purple-200/60">
+        <div class="flex-shrink-0 w-24 sm:w-28 lg:w-auto snap-start bg-purple-50/80 p-2 rounded-xl border border-purple-200/60">
           <p class="text-[10px] sm:text-xs font-bold text-purple-700 whitespace-nowrap">クローク利用</p>
           <p id="statCloak" class="text-base sm:text-xl font-black text-purple-800">0</p>
         </div>
         <!-- 7. 当日受付 -->
-        <div class="flex-shrink-0 w-24 sm:w-auto snap-start bg-amber-50/80 p-2 rounded-xl border border-amber-200/60">
+        <div class="flex-shrink-0 w-24 sm:w-28 lg:w-auto snap-start bg-amber-50/80 p-2 rounded-xl border border-amber-200/60">
           <p class="text-[10px] sm:text-xs font-bold text-amber-700 whitespace-nowrap">当日受付</p>
           <p id="statWalkin" class="text-base sm:text-xl font-black text-amber-800">0</p>
         </div>
