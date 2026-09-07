@@ -253,12 +253,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 5秒ごとの自動ポーリング（バックエンドのインメモリキャッシュと連携）
+   * 詳細モーダルが表示中かどうかを判定
+   */
+  function isDetailModalOpen() {
+    return currentModalParticipantId !== null || (elements.detailModal && !elements.detailModal.classList.contains('hidden'));
+  }
+
+  /**
+   * 5秒ごとの自動ポーリング（モーダル表示中は一時停止）
    */
   let pollingIntervalId = null;
   function startAutoPolling() {
     if (pollingIntervalId) clearInterval(pollingIntervalId);
     pollingIntervalId = setInterval(async () => {
+      // モーダル表示中はポーリングを一時停止（編集中のステータスが上書きされるのを完全に防止）
+      if (isDetailModalOpen()) {
+        return;
+      }
       if (state.isAuthenticated && navigator.onLine && !state.isFetching) {
         await fetchParticipantsFromApi(true);
       }
@@ -293,13 +304,14 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCurrentView();
         updateLastSyncDisplay();
 
-        // モーダル表示中の場合、最新データでモーダル内の各ステータス情報表示とトグルボタンを直接上書き更新（リアクティブ化）
-        if (currentModalParticipantId !== null) {
+        // モーダル表示中で「変更が行われていない」場合のみ最新データと連動
+        // ※モーダル内で変更を行っている最中（hasModalChanges===true）は決して上書きしない
+        if (currentModalParticipantId !== null && !hasModalChanges) {
           const latestParticipant = state.participants.find((p) => p.id === currentModalParticipantId);
           if (latestParticipant) {
             state.selectedParticipant = latestParticipant;
-            updateModalInfoDisplay(latestParticipant); // ステータス情報（テキスト・ラベル）のピンポイント更新
-            updateModalToggleButtons(latestParticipant); // 操作用トグルボタンのピンポイント更新
+            updateModalInfoDisplay(latestParticipant);
+            updateModalToggleButtons(latestParticipant);
           }
         }
       }
@@ -1114,6 +1126,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (result.success && result.data?.updatedAt) {
             participantToSave.updatedAt = result.data.updatedAt;
             renderCurrentView(); // 最終更新日時を一覧・カードへ反映
+            // スプレッドシート側の最新状態と自然に同期
+            fetchParticipantsFromApi(true);
           }
         } catch (error) {
           console.warn('[Update] API通信失敗のためオフラインキューへ退避:', error);
