@@ -195,3 +195,19 @@ tr.bg-indigo-50\/20 .sticky-col-name {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 1rem);
 }
+
+/* 検索結果グリッドコンテナ（行の均等圧縮を防止し、カード内容に応じて自動拡張・縦スクロール） */
+#searchResultsContainer {
+  grid-auto-rows: max-content !important;
+  align-content: flex-start !important;
+  align-items: start !important;
+}
+
+/* 検索結果カード（行の圧縮による重なりを防止し、自然な高さを保持） */
+.participant-card {
+  height: auto !important;
+  min-height: -webkit-fit-content !important;
+  min-height: fit-content !important;
+  box-sizing: border-box;
+}
+
