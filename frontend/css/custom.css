@@ -117,3 +117,70 @@
   color: #ffffff !important;
   border-color: #4338ca !important;
 }
+
+/* スクロールバー非表示ユーティリティ（モバイルの横スワイプ用） */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* iOS Safari 自動ズーム防止（16px以上のフォントサイズを保証） */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* テーブルSticky固定列（横スクロール時に氏名を常時表示） */
+.sticky-col-no {
+  position: sticky;
+  left: 0;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  z-index: 20;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+thead .sticky-col-no {
+  background-color: #f8fafc;
+  z-index: 30;
+}
+
+.sticky-col-name {
+  position: sticky;
+  left: 44px;
+  z-index: 20;
+  background-color: #ffffff;
+  box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+thead .sticky-col-name {
+  background-color: #f8fafc;
+  z-index: 30;
+  box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+}
+
+tr:hover .sticky-col-no,
+tr:hover .sticky-col-name {
+  background-color: #eef2ff !important;
+}
+
+tr.bg-indigo-50\/20 .sticky-col-no,
+tr.bg-indigo-50\/20 .sticky-col-name {
+  background-color: #f5f7ff;
+}
+
+/* セーフエリア対応 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
