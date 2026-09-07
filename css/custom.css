@@ -138,7 +138,16 @@
   }
 }
 
-/* テーブルSticky固定列（横スクロール時に氏名を常時表示） */
+/* テーブルヘッダー固定（縦スクロール時に項目行を常時表示） */
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background-color: #f8fafc;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* テーブルSticky固定列（横スクロール時に氏名を常時表示 & 縦スクロール両対応） */
 .sticky-col-no {
   position: sticky;
   left: 0;
@@ -151,8 +160,9 @@
 }
 
 thead .sticky-col-no {
+  top: 0;
   background-color: #f8fafc;
-  z-index: 30;
+  z-index: 40;
 }
 
 .sticky-col-name {
@@ -165,8 +175,9 @@ thead .sticky-col-no {
 }
 
 thead .sticky-col-name {
+  top: 0;
   background-color: #f8fafc;
-  z-index: 30;
+  z-index: 40;
   box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
 }
 

@@ -618,9 +618,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // スプレッドシートのような表形式テーブルを生成（No列と氏名列をSticky固定）
+    // スプレッドシートのような表形式テーブルを生成（No列と氏名列をSticky固定、ヘッダー固定でリスト内のみ縦スクロール）
     elements.listResultsContainer.innerHTML = `
-      <div class="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm relative">
+      <div class="overflow-auto bg-white rounded-2xl border border-slate-200 shadow-sm relative flex-1 min-h-0">
         <table class="w-full text-left border-collapse text-xs sm:text-sm">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200 text-[11px] sm:text-xs font-extrabold text-slate-500 uppercase tracking-wider select-none sticky top-0 z-30">
