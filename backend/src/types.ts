@@ -58,6 +58,8 @@ export interface Participant {
   bentoConfirmed: boolean; // [23] W: 弁当券引換確認 (TRUE/FALSE)
   bentoExchanged: boolean; // 互換用エイリアス
   feeConfirmed: boolean; // [24] X: 参加費支払確認 (TRUE/FALSE: 当日受領フラグ)
+  bentoDelivered: boolean; // [25] Y: 弁当引換（実物） (TRUE/FALSE)
+  cloakUsed: boolean; // [26] Z: クローク利用 (TRUE/FALSE)
   rowIndex?: number; // スプレッドシート上の行番号（2行目以降、1-indexed）
 }
 
@@ -70,6 +72,8 @@ export interface UpdateStatusRequest {
   bentoConfirmed?: boolean; // 弁当券引換確認 (W列)
   bentoExchanged?: boolean; // 弁当券引換確認（互換用）
   feeConfirmed?: boolean; // 参加費支払確認 (X列: 当日受領フラグ)
+  bentoDelivered?: boolean; // 弁当引換（実物） (Y列)
+  cloakUsed?: boolean; // クローク利用 (Z列)
   rowIndex?: number; // 行番号（指定があれば検索をスキップ可能）
 }
 
@@ -95,10 +99,12 @@ export interface WalkinRegistrationRequest {
   location?: string; // 所属所在地
   checkedIn?: boolean; // 受付状況（指定なし時はtrue）
   bentoOrdered?: boolean; // 弁当注文（当日受付時はデフォルトfalse）
-  bentoConfirmed?: boolean; // 弁当引換確認（指定なし時はfalse）
+  bentoConfirmed?: boolean; // 弁当券引換確認（指定なし時はfalse）
   feePaid?: boolean; // 参加費事前支払（当日登録はfalse）
   isWalkin?: boolean; // 当日受付フラグ（指定なし時はtrue）
   feeConfirmed?: boolean; // 参加費支払確認（指定なし時はfalse）
+  bentoDelivered?: boolean; // 弁当引換（実物）（指定なし時はfalse）
+  cloakUsed?: boolean; // クローク利用（指定なし時はfalse）
 }
 
 /**

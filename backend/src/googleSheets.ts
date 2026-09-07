@@ -235,7 +235,7 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
 
   const sheetName = env.GOOGLE_SHEET_NAME || '参加者情報一覧';
   const spreadsheetId = extractSpreadsheetId(env.GOOGLE_SPREADSHEET_ID);
-  const range = encodeURIComponent(`'${sheetName}'!A2:X`); // ヘッダー行を除く全24列（A〜X）
+  const range = encodeURIComponent(`'${sheetName}'!A2:Z`); // ヘッダー行を除く全26列（A〜Z）
 
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
 
@@ -267,6 +267,8 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
 
     const bentoConfirmed = parseBoolean(row[22]); // [23] W列: 弁当券引換確認
     const feeConfirmed = parseBoolean(row[23]); // [24] X列: 参加費支払確認（当日受領）
+    const bentoDelivered = parseBoolean(row[24]); // [25] Y列: 弁当引換（実物）
+    const cloakUsed = parseBoolean(row[25]); // [26] Z列: クローク利用
 
     return {
       id: String(row[0] || '').trim(),
@@ -294,6 +296,8 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
       bentoConfirmed, // [23] W列: 弁当券引換確認
       bentoExchanged: bentoConfirmed, // 互換用プロパティ
       feeConfirmed, // [24] X列: 参加費支払確認
+      bentoDelivered, // [25] Y列: 弁当引換（実物）
+      cloakUsed, // [26] Z列: クローク利用
       rowIndex,
     };
   });
@@ -306,7 +310,7 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
 export async function updateParticipantStatus(
   env: EnvironmentVariables,
   payload: UpdateStatusRequest
-): Promise<{ id: string; checkedIn?: boolean; bentoOrdered?: boolean; bentoConfirmed?: boolean; feePaid?: boolean; feeConfirmed?: boolean; updatedAt: string }> {
+): Promise<{ id: string; checkedIn?: boolean; bentoOrdered?: boolean; bentoConfirmed?: boolean; feePaid?: boolean; feeConfirmed?: boolean; bentoDelivered?: boolean; cloakUsed?: boolean; updatedAt: string }> {
   const token = await getGoogleAccessToken(
     env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     env.GOOGLE_PRIVATE_KEY
@@ -330,8 +334,8 @@ export async function updateParticipantStatus(
   const updatedAt = getJstTimestamp();
 
   // 現在の行の値を取得して指定されたフラグのみを上書き、または直接更新
-  // R列(18):受付状況, S列(19):弁当事前注文(維持), T列(20):参加費事前支払(維持), U列(21):当日受付(維持), V列(22):最終更新日時, W列(23):弁当券引換確認, X列(24):参加費支払確認
-  const rangeRead = `'${sheetName}'!R${targetRowIndex}:X${targetRowIndex}`;
+  // R列(18):受付状況, S列(19):弁当事前注文(維持), T列(20):参加費事前支払(維持), U列(21):当日受付(維持), V列(22):最終更新日時, W列(23):弁当券引換確認, X列(24):参加費支払確認, Y列(25):弁当引換(実物), Z列(26):クローク利用
+  const rangeRead = `'${sheetName}'!R${targetRowIndex}:Z${targetRowIndex}`;
   const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(rangeRead)}?valueRenderOption=UNFORMATTED_VALUE`;
   
   const readResponse = await fetchWithExponentialBackoff(readUrl, {
@@ -354,6 +358,8 @@ export async function updateParticipantStatus(
   let currentWalkin = false;
   let currentBentoConfirmed = false;
   let currentFeeConfirmed = false;
+  let currentBentoDelivered = false;
+  let currentCloakUsed = false;
 
   if (readResponse.ok) {
     const readResult = (await readResponse.json()) as { values?: unknown[][] };
@@ -364,14 +370,18 @@ export async function updateParticipantStatus(
     currentWalkin = parseBooleanVal(rowValues[3]); // U
     currentBentoConfirmed = parseBooleanVal(rowValues[5]); // W (弁当券引換確認)
     currentFeeConfirmed = parseBooleanVal(rowValues[6]); // X (参加費支払確認)
+    currentBentoDelivered = parseBooleanVal(rowValues[7]); // Y (弁当引換・実物)
+    currentCloakUsed = parseBooleanVal(rowValues[8]); // Z (クローク利用)
   }
 
   const finalCheckedIn = payload.checkedIn !== undefined ? payload.checkedIn : currentCheckedIn;
   const requestedBentoConfirmed = payload.bentoConfirmed !== undefined ? payload.bentoConfirmed : payload.bentoExchanged;
   const finalBentoConfirmed = requestedBentoConfirmed !== undefined ? requestedBentoConfirmed : currentBentoConfirmed;
   const finalFeeConfirmed = payload.feeConfirmed !== undefined ? payload.feeConfirmed : currentFeeConfirmed;
+  const finalBentoDelivered = payload.bentoDelivered !== undefined ? payload.bentoDelivered : currentBentoDelivered;
+  const finalCloakUsed = payload.cloakUsed !== undefined ? payload.cloakUsed : currentCloakUsed;
 
-  const rangeWrite = `'${sheetName}'!R${targetRowIndex}:X${targetRowIndex}`;
+  const rangeWrite = `'${sheetName}'!R${targetRowIndex}:Z${targetRowIndex}`;
   const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(rangeWrite)}?valueInputOption=USER_ENTERED`;
 
   const bodyData = {
@@ -386,6 +396,8 @@ export async function updateParticipantStatus(
         updatedAt, // V: 最終更新日時
         finalBentoConfirmed ? 'TRUE' : 'FALSE', // W: 弁当券引換確認
         finalFeeConfirmed ? 'TRUE' : 'FALSE', // X: 参加費支払確認 (当日受領)
+        finalBentoDelivered ? 'TRUE' : 'FALSE', // Y: 弁当引換 (実物)
+        finalCloakUsed ? 'TRUE' : 'FALSE', // Z: クローク利用
       ],
     ],
   };
@@ -411,6 +423,8 @@ export async function updateParticipantStatus(
     bentoConfirmed: finalBentoConfirmed,
     feePaid: currentFeePaid,
     feeConfirmed: finalFeeConfirmed,
+    bentoDelivered: finalBentoDelivered,
+    cloakUsed: finalCloakUsed,
     updatedAt,
   };
 }
@@ -460,9 +474,11 @@ export async function appendWalkinParticipant(
     bentoConfirmed: payload.bentoConfirmed || false,
     bentoExchanged: payload.bentoConfirmed || false,
     feeConfirmed: payload.feeConfirmed || false,
+    bentoDelivered: payload.bentoDelivered || false,
+    cloakUsed: payload.cloakUsed || false,
   };
 
-  // 24列の配列データを作成（A〜X）
+  // 26列の配列データを作成（A〜Z）
   const rowValues = [
     newParticipant.id, // A [1]
     newParticipant.organization, // B [2]
@@ -488,9 +504,11 @@ export async function appendWalkinParticipant(
     newParticipant.updatedAt, // V [22]
     newParticipant.bentoConfirmed ? 'TRUE' : 'FALSE', // W [23]
     newParticipant.feeConfirmed ? 'TRUE' : 'FALSE', // X [24]
+    newParticipant.bentoDelivered ? 'TRUE' : 'FALSE', // Y [25]
+    newParticipant.cloakUsed ? 'TRUE' : 'FALSE', // Z [26]
   ];
 
-  const targetAppendRange = `'${sheetName}'!A:X`;
+  const targetAppendRange = `'${sheetName}'!A:Z`;
   const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(targetAppendRange)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const response = await fetchWithExponentialBackoff(appendUrl, {
