@@ -248,32 +248,25 @@ document.addEventListener('DOMContentLoaded', () => {
       await window.queueManager.processQueue();
     }
 
-    // 4. 定期自動ポーリングの設定（5秒に1回）
-    startAutoPolling();
   }
 
   /**
-   * 詳細モーダルが表示中かどうかを判定
+   * ユーザーアクション（タブ切り替え・モーダルオープン・ソート/フィルター切り替え）を契機とするデータ同期
    */
-  function isDetailModalOpen() {
-    return currentModalParticipantId !== null || (elements.detailModal && !elements.detailModal.classList.contains('hidden'));
-  }
+  async function triggerActionSync() {
+    if (!state.isAuthenticated || !navigator.onLine || state.isFetching) return;
 
-  /**
-   * 5秒ごとの自動ポーリング（モーダル表示中は一時停止）
-   */
-  let pollingIntervalId = null;
-  function startAutoPolling() {
-    if (pollingIntervalId) clearInterval(pollingIntervalId);
-    pollingIntervalId = setInterval(async () => {
-      // モーダル表示中はポーリングを一時停止（編集中のステータスが上書きされるのを完全に防止）
-      if (isDetailModalOpen()) {
-        return;
+    // 未送信のオフラインキューがあれば優先して送信
+    if (window.queueManager && window.queueManager.getQueue().length > 0) {
+      try {
+        await window.queueManager.processQueue();
+      } catch (error) {
+        console.warn('[ActionSync Warning] キュー送信処理でエラー:', error);
       }
-      if (state.isAuthenticated && navigator.onLine && !state.isFetching) {
-        await fetchParticipantsFromApi(true);
-      }
-    }, 5000);
+    }
+
+    // サイレントモードで最新データをフェッチ（UIをブロックせずバックグラウンド更新）
+    await fetchParticipantsFromApi(true);
   }
 
   /**
@@ -431,6 +424,9 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.listSection?.classList.remove('hidden');
     }
     renderCurrentView();
+
+    // タブ切り替えアクションをトリガーとする最新データ同期
+    triggerActionSync();
   }
 
   /**
@@ -488,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.clearSearchButton.classList.add('hidden');
       }
     }
-    renderSearchResults();
+    renderSearchResults(true);
   });
 
   // 検索クリアボタン
@@ -498,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.searchQuery = '';
       elements.clearSearchButton.classList.add('hidden');
       elements.searchInput.focus();
-      renderSearchResults();
+      renderSearchResults(true);
     }
   });
 
@@ -511,7 +507,10 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
 
       state.currentFilter = btn.dataset.filter || 'all';
-      renderListView();
+      renderListView(true); // フィルター切り替え時はリストのスクロールをトップへリセット
+
+      // フィルター（ソート）切り替えアクションをトリガーとする最新データ同期
+      triggerActionSync();
     });
   });
 
@@ -529,8 +528,9 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * 検索結果の描画（コンパクトなカード形式）
    */
-  function renderSearchResults() {
+  function renderSearchResults(resetScroll = false) {
     if (!elements.searchResultsContainer) return;
+    const prevScrollTop = (!resetScroll) ? elements.searchResultsContainer.scrollTop : 0;
     const query = state.searchQuery.trim();
 
     if (!query) {
@@ -569,14 +569,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     elements.searchResultsContainer.innerHTML = matches.map((p) => createCompactParticipantCardHtml(p)).join('');
+
+    // 再描画前のスクロール位置を復元
+    if (!resetScroll && prevScrollTop > 0) {
+      elements.searchResultsContainer.scrollTop = prevScrollTop;
+    }
+
     attachRowClickListeners(elements.searchResultsContainer, '.participant-card');
   }
 
   /**
    * 一覧表示の描画（スプレッドシート風 表形式 Table）
    */
-  function renderListView() {
+  function renderListView(resetScroll = false) {
     if (!elements.listResultsContainer) return;
+
+    // 再描画前のスクロール位置を取得（resetScrollがfalseの場合のみ保持）
+    const prevScrollContainer = elements.listResultsContainer.querySelector('.overflow-auto');
+    const prevScrollTop = (!resetScroll && prevScrollContainer) ? prevScrollContainer.scrollTop : 0;
+    const prevScrollLeft = (!resetScroll && prevScrollContainer) ? prevScrollContainer.scrollLeft : 0;
 
     let list = [...state.participants];
     switch (state.currentFilter) {
@@ -642,6 +653,15 @@ document.addEventListener('DOMContentLoaded', () => {
         </table>
       </div>
     `;
+
+    // 再描画前のスクロール位置を復元
+    if (!resetScroll && (prevScrollTop > 0 || prevScrollLeft > 0)) {
+      const newScrollContainer = elements.listResultsContainer.querySelector('.overflow-auto');
+      if (newScrollContainer) {
+        newScrollContainer.scrollTop = prevScrollTop;
+        newScrollContainer.scrollLeft = prevScrollLeft;
+      }
+    }
 
     attachRowClickListeners(elements.listResultsContainer, '.participant-table-row');
   }
@@ -954,6 +974,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.detailModal?.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
+
+    // 詳細モーダルオープンをトリガーとする最新データ同期（他端末でのステータス変更を反映）
+    triggerActionSync();
   }
 
   /**
