@@ -193,7 +193,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        <input type="text" id="searchInput" placeholder="フリガナ（例: ヤマダ）、漢字氏名、または学校名で検索"
+        <input type="text" id="searchInput" placeholder="フリガナ（例: ヤマダ）、漢字氏名、学校名、預かり番号で検索"
           class="w-full text-base font-bold text-slate-900 placeholder-slate-400 outline-none bg-transparent py-1.5 px-1">
         <button type="button" id="clearSearchButton" title="検索条件をクリア" aria-label="検索条件をクリア" class="hidden p-2 text-slate-400 hover:text-slate-600 rounded-full flex-shrink-0">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,6 +324,20 @@
             <button type="button" id="toggleCloakBtn" class="touch-target py-3 px-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center space-x-1 col-span-2 sm:col-span-1 cursor-pointer">
               <span>クローク未利用</span>
             </button>
+          </div>
+
+          <!-- クローク預かり番号入力欄（クローク利用が「利用有」の時のみ表示） -->
+          <div id="cloakNumberContainer" class="hidden pt-2 border-t border-purple-200/80">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 bg-purple-50/90 border border-purple-200 rounded-xl p-2.5">
+              <label for="cloakNumberInput" class="text-xs font-extrabold text-purple-800 whitespace-nowrap flex items-center space-x-1.5">
+                <svg class="w-4 h-4 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span>クローク預かり番号</span>
+              </label>
+              <input type="text" id="cloakNumberInput" placeholder="預かり番号を入力（例: 12）" autocomplete="off"
+                class="w-full touch-target px-3.5 py-2 rounded-lg border border-purple-300 bg-white text-slate-900 text-base font-bold placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
+            </div>
           </div>
         </div>
 

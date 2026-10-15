@@ -93,13 +93,28 @@ document.addEventListener('DOMContentLoaded', () => {
     modalStatusCloak: document.getElementById('modalStatusCloak'),
     modalStatusBentoOrder: document.getElementById('modalStatusBentoOrder'),
 
-    // モーダル内ステータストグルボタン
+    // モーダル内ステータストグルボタン & クローク預かり番号入力
     toggleCheckinBtn: document.getElementById('toggleCheckinBtn'),
     toggleBentoBtn: document.getElementById('toggleBentoBtn'),
     toggleBentoDeliverBtn: document.getElementById('toggleBentoDeliverBtn'),
     toggleFeeBtn: document.getElementById('toggleFeeBtn'),
     toggleCloakBtn: document.getElementById('toggleCloakBtn'),
+    cloakNumberContainer: document.getElementById('cloakNumberContainer'),
+    cloakNumberInput: document.getElementById('cloakNumberInput'),
   };
+
+  /**
+   * HTMLエスケープ処理
+   */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   /**
    * ひらがな→カタカナ変換
@@ -430,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 検索ロジック（フリガナ・漢字・所属など）
+   * 検索ロジック（フリガナ・漢字・所属・クローク預かり番号など）
    */
   function filterParticipantsBySearch(query) {
     if (!query) return [];
@@ -456,10 +471,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
       }
 
-      // 漢字氏名・所属・電話番号・システムID（UUID）での検索一致
+      // 漢字氏名・所属・電話番号・クローク預かり番号・システムID（UUID）での検索一致
       const fullName = `${normalizeString(p.lastName)}${normalizeString(p.firstName)}`;
       const org = normalizeString(p.organization);
       const phone = `${p.phone1}${p.phone2}${p.phone3}`;
+      const cloakNum = normalizeString(p.cloakNumber);
+      const queryWithoutHash = normQuery.replace(/^#/, '');
       const idRaw = (p.id || '').toLowerCase();
       const idClean = idRaw.replace(/[^a-z0-9]/g, '');
       const queryClean = normQuery.replace(/[^a-z0-9]/g, '');
@@ -468,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fullName.includes(normQuery) ||
         org.includes(normQuery) ||
         phone.includes(normQuery) ||
+        (p.cloakUsed && cloakNum && (cloakNum.includes(normQuery) || (queryWithoutHash && cloakNum.includes(queryWithoutHash)))) ||
         idRaw.includes(normQuery) ||
         (queryClean.length >= 3 && idClean.includes(queryClean))
       );
@@ -709,10 +727,11 @@ document.addEventListener('DOMContentLoaded', () => {
       feeBadgeHtml = '<span class="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 whitespace-nowrap">未受領</span>';
     }
 
-    // クローク利用バッジ
+    // クローク利用バッジ（預かり番号がある場合は併記）
+    const cloakNumText = participant.cloakNumber ? ` #${escapeHtml(participant.cloakNumber)}` : '';
     let cloakBadgeHtml = '';
     if (isCloakUsed) {
-      cloakBadgeHtml = '<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 whitespace-nowrap">利用有</span>';
+      cloakBadgeHtml = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 whitespace-nowrap">利用有${cloakNumText}</span>`;
     } else {
       cloakBadgeHtml = '<span class="text-slate-400 text-xs font-normal">-</span>';
     }
@@ -799,9 +818,10 @@ document.addEventListener('DOMContentLoaded', () => {
       feeBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500">未受領</span>';
     }
 
+    const cloakNumText = participant.cloakNumber ? ` #${escapeHtml(participant.cloakNumber)}` : '';
     let cloakBadge = '';
     if (isCloakUsed) {
-      cloakBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">クローク有</span>';
+      cloakBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">クローク有${cloakNumText}</span>`;
     }
 
     return `
@@ -902,10 +922,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 5. クローク利用（テキスト・色）
+    // 5. クローク利用・預かり番号（テキスト・色）
     if (elements.modalStatusCloak) {
-      elements.modalStatusCloak.textContent = participant.cloakUsed ? '利用有（荷物預かり中）' : '利用なし';
-      elements.modalStatusCloak.className = participant.cloakUsed ? 'font-bold text-purple-600' : 'font-bold text-slate-500';
+      if (participant.cloakUsed) {
+        const numLabel = participant.cloakNumber ? `預かり番号: ${participant.cloakNumber}` : '荷物預かり中';
+        elements.modalStatusCloak.textContent = `利用有（${numLabel}）`;
+        elements.modalStatusCloak.className = 'font-bold text-purple-600';
+      } else {
+        elements.modalStatusCloak.textContent = '利用なし';
+        elements.modalStatusCloak.className = 'font-bold text-slate-500';
+      }
     }
 
     // 6. 弁当事前注文有無（テキスト・色）
@@ -970,6 +996,9 @@ document.addEventListener('DOMContentLoaded', () => {
     currentModalParticipantId = participant.id; // 現在開いている参加者IDをセット
     hasModalChanges = false; // モーダル内の変更フラグを初期化
     state.isUpdatingStatus = false;
+    if (elements.cloakNumberInput) {
+      elements.cloakNumberInput.value = participant.cloakNumber || '';
+    }
     updateModalUI(participant);
 
     elements.detailModal?.classList.remove('hidden');
@@ -1087,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 5. クローク利用 (Z列: クローク利用有無)
+    // 5. クローク利用 (Z列: クローク利用有無) & 預かり番号入力欄 (AA列)
     if (elements.toggleCloakBtn) {
       elements.toggleCloakBtn.disabled = false;
       if (participant.cloakUsed) {
@@ -1096,12 +1125,23 @@ document.addEventListener('DOMContentLoaded', () => {
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
           <span>クローク利用有</span>
         `;
+        elements.cloakNumberContainer?.classList.remove('hidden');
+        if (elements.cloakNumberInput) {
+          elements.cloakNumberInput.disabled = false;
+          if (document.activeElement !== elements.cloakNumberInput) {
+            elements.cloakNumberInput.value = participant.cloakNumber || '';
+          }
+        }
       } else {
         elements.toggleCloakBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer col-span-2 sm:col-span-1';
         elements.toggleCloakBtn.innerHTML = `
           <span class="w-3 h-3 rounded-full border-2 border-slate-400"></span>
           <span>クローク未利用</span>
         `;
+        elements.cloakNumberContainer?.classList.add('hidden');
+        if (elements.cloakNumberInput) {
+          elements.cloakNumberInput.disabled = true;
+        }
       }
     }
   }
@@ -1121,6 +1161,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 変更があった場合のみ、確定した最新ステータスを1回だけまとめてデータベースへ送信
     if (needsSave) {
+      const finalCloakNumber = participantToSave.cloakUsed
+        ? String(participantToSave.cloakNumber || '').trim()
+        : '';
+      participantToSave.cloakNumber = finalCloakNumber;
+
       const payload = {
         id: participantToSave.id,
         checkedIn: participantToSave.checkedIn,
@@ -1128,6 +1173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bentoDelivered: participantToSave.bentoDelivered,
         feeConfirmed: participantToSave.feeConfirmed,
         cloakUsed: participantToSave.cloakUsed,
+        cloakNumber: finalCloakNumber,
         rowIndex: participantToSave.rowIndex,
       };
 
@@ -1147,6 +1193,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const result = await response.json();
           if (result.success && result.data?.updatedAt) {
             participantToSave.updatedAt = result.data.updatedAt;
+            if (result.data.cloakNumber !== undefined) {
+              participantToSave.cloakNumber = result.data.cloakNumber;
+            }
             renderCurrentView(); // 最終更新日時を一覧・カードへ反映
             // スプレッドシート側の最新状態と自然に同期
             fetchParticipantsFromApi(true);
@@ -1197,18 +1246,45 @@ document.addEventListener('DOMContentLoaded', () => {
       hasModalChanges = true;
     } else if (field === 'cloakUsed') {
       currentParticipant.cloakUsed = !currentParticipant.cloakUsed;
+      if (currentParticipant.cloakUsed) {
+        currentParticipant.cloakNumber = elements.cloakNumberInput
+          ? elements.cloakNumberInput.value.trim()
+          : (currentParticipant.cloakNumber || '');
+      } else {
+        currentParticipant.cloakNumber = '';
+      }
       hasModalChanges = true;
     }
 
     // 2. モーダル内テキスト表示、トグルボタン表示、全体統計の即時更新
     updateModalInfoDisplay(currentParticipant);
     updateModalToggleButtons(currentParticipant);
+    if (field === 'cloakUsed' && currentParticipant.cloakUsed) {
+      setTimeout(() => elements.cloakNumberInput?.focus(), 50);
+    }
     updateStatistics();
     renderCurrentView();
 
     // 3. キャッシュの即時更新
     window.queueManager?.setCachedParticipants(state.participants);
   }
+
+  // クローク預かり番号の入力イベント（リアルタイム反映・モーダル閉塞時に一括保存）
+  elements.cloakNumberInput?.addEventListener('input', (e) => {
+    if (!state.selectedParticipant) return;
+    state.selectedParticipant.cloakNumber = e.target.value.trim();
+    hasModalChanges = true;
+    updateModalInfoDisplay(state.selectedParticipant);
+    renderCurrentView();
+    window.queueManager?.setCachedParticipants(state.participants);
+  });
+
+  elements.cloakNumberInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      elements.cloakNumberInput.blur();
+    }
+  });
 
   elements.toggleCheckinBtn?.addEventListener('click', () => handleToggleStatus('checkedIn'));
   elements.toggleBentoBtn?.addEventListener('click', () => handleToggleStatus('bentoConfirmed'));
