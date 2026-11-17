@@ -3,8 +3,9 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // モーダル表示中の参加者IDを保持する状態変数
+  // モーダル表示中の参加者IDおよび編集中ドラフトを保持する状態変数
   let currentModalParticipantId = null;
+  let modalDraft = null;
 
   // 状態管理ステート
   const state = {
@@ -114,6 +115,20 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * 有効な参加者データか判定（スプレッドシート上のチェックボックスのみの空行を除外）
+   */
+  function isValidParticipant(participant) {
+    if (!participant || typeof participant !== 'object') return false;
+    return Boolean(
+      (participant.id && String(participant.id).trim()) ||
+      (participant.lastName && String(participant.lastName).trim()) ||
+      (participant.firstName && String(participant.firstName).trim()) ||
+      (participant.lastNameKana && String(participant.lastNameKana).trim()) ||
+      (participant.firstNameKana && String(participant.firstNameKana).trim())
+    );
   }
 
   /**
@@ -247,10 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
    * 初期データの読み込み（キャッシュ優先表示後、APIフェッチ）
    */
   async function loadInitialData() {
-    // 1. ローカルキャッシュの即時読み込み表示
+    // 1. ローカルキャッシュの即時読み込み表示（空行データを除外）
     const cached = window.queueManager?.getCachedParticipants();
     if (cached && Array.isArray(cached) && cached.length > 0) {
-      state.participants = cached;
+      state.participants = cached.filter(isValidParticipant);
       updateStatistics();
       renderCurrentView();
     }
@@ -305,7 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
-        state.participants = result.data;
+        // チェックボックスのみの空行を除外して有効な参加者のみを保持
+        state.participants = result.data.filter(isValidParticipant);
         // キャッシュに保存
         window.queueManager?.setCachedParticipants(state.participants);
         updateStatistics();
@@ -313,13 +329,23 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLastSyncDisplay();
 
         // モーダル表示中で「変更が行われていない」場合のみ最新データと連動
-        // ※モーダル内で変更を行っている最中（hasModalChanges===true）は決して上書きしない
+        // ※モーダル内で変更を行っている最中（hasModalChanges===true）はドラフトを決して上書きしない
         if (currentModalParticipantId !== null && !hasModalChanges) {
           const latestParticipant = state.participants.find((p) => p.id === currentModalParticipantId);
           if (latestParticipant) {
             state.selectedParticipant = latestParticipant;
-            updateModalInfoDisplay(latestParticipant);
-            updateModalToggleButtons(latestParticipant);
+            modalDraft = { ...latestParticipant };
+            if (elements.cloakNumberInput && document.activeElement !== elements.cloakNumberInput) {
+              elements.cloakNumberInput.value = modalDraft.cloakNumber || '';
+            }
+            updateModalInfoDisplay(modalDraft);
+            updateModalToggleButtons(modalDraft);
+          }
+        } else if (currentModalParticipantId !== null && hasModalChanges) {
+          // 編集中でも「確定して閉じる」押下時の保存先参照だけは最新配列内の要素に維持する
+          const latestParticipant = state.participants.find((p) => p.id === currentModalParticipantId);
+          if (latestParticipant) {
+            state.selectedParticipant = latestParticipant;
           }
         }
       }
@@ -445,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 検索ロジック（フリガナ・漢字・所属・クローク預かり番号など）
+   * 検索ロジック（フリガナ・漢字・所属など）
    */
   function filterParticipantsBySearch(query) {
     if (!query) return [];
@@ -471,12 +497,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
       }
 
-      // 漢字氏名・所属・電話番号・クローク預かり番号・システムID（UUID）での検索一致
+      // 漢字氏名・所属・電話番号・システムID（UUID）・クローク預かり番号での検索一致
       const fullName = `${normalizeString(p.lastName)}${normalizeString(p.firstName)}`;
       const org = normalizeString(p.organization);
       const phone = `${p.phone1}${p.phone2}${p.phone3}`;
-      const cloakNum = normalizeString(p.cloakNumber);
-      const queryWithoutHash = normQuery.replace(/^#/, '');
+      const cloakNum = normalizeString(p.cloakNumber || '');
       const idRaw = (p.id || '').toLowerCase();
       const idClean = idRaw.replace(/[^a-z0-9]/g, '');
       const queryClean = normQuery.replace(/[^a-z0-9]/g, '');
@@ -485,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fullName.includes(normQuery) ||
         org.includes(normQuery) ||
         phone.includes(normQuery) ||
-        (p.cloakUsed && cloakNum && (cloakNum.includes(normQuery) || (queryWithoutHash && cloakNum.includes(queryWithoutHash)))) ||
+        (cloakNum && cloakNum.includes(normQuery)) ||
         idRaw.includes(normQuery) ||
         (queryClean.length >= 3 && idClean.includes(queryClean))
       );
@@ -728,9 +753,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // クローク利用バッジ（預かり番号がある場合は併記）
-    const cloakNumText = participant.cloakNumber ? ` #${escapeHtml(participant.cloakNumber)}` : '';
     let cloakBadgeHtml = '';
     if (isCloakUsed) {
+      const cloakNumText = participant.cloakNumber ? ` (No.${escapeHtml(participant.cloakNumber)})` : '';
       cloakBadgeHtml = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 whitespace-nowrap">利用有${cloakNumText}</span>`;
     } else {
       cloakBadgeHtml = '<span class="text-slate-400 text-xs font-normal">-</span>';
@@ -818,9 +843,9 @@ document.addEventListener('DOMContentLoaded', () => {
       feeBadge = '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500">未受領</span>';
     }
 
-    const cloakNumText = participant.cloakNumber ? ` #${escapeHtml(participant.cloakNumber)}` : '';
     let cloakBadge = '';
     if (isCloakUsed) {
+      const cloakNumText = participant.cloakNumber ? `: No.${escapeHtml(participant.cloakNumber)}` : '';
       cloakBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">クローク有${cloakNumText}</span>`;
     }
 
@@ -922,11 +947,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 5. クローク利用・預かり番号（テキスト・色）
+    // 5. クローク利用（テキスト・色・預かり番号）
     if (elements.modalStatusCloak) {
       if (participant.cloakUsed) {
-        const numLabel = participant.cloakNumber ? `預かり番号: ${participant.cloakNumber}` : '荷物預かり中';
-        elements.modalStatusCloak.textContent = `利用有（${numLabel}）`;
+        const numSuffix = participant.cloakNumber ? ` [預かり番号: ${participant.cloakNumber}]` : '';
+        elements.modalStatusCloak.textContent = `利用有（荷物預かり中）${numSuffix}`;
         elements.modalStatusCloak.className = 'font-bold text-purple-600';
       } else {
         elements.modalStatusCloak.textContent = '利用なし';
@@ -989,17 +1014,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let hasModalChanges = false;
 
   /**
-   * 詳細モーダルを開く
+   * 詳細モーダルを開く（編集用ドラフトを生成し、「確定して閉じる」押下まで元データを変更しない）
    */
   function openDetailModal(participant) {
     state.selectedParticipant = participant;
+    modalDraft = { ...participant };
     currentModalParticipantId = participant.id; // 現在開いている参加者IDをセット
     hasModalChanges = false; // モーダル内の変更フラグを初期化
     state.isUpdatingStatus = false;
+
+    // クローク預かり番号入力欄の初期値をセット
     if (elements.cloakNumberInput) {
-      elements.cloakNumberInput.value = participant.cloakNumber || '';
+      elements.cloakNumberInput.value = modalDraft.cloakNumber || '';
     }
-    updateModalUI(participant);
+
+    updateModalUI(modalDraft);
 
     elements.detailModal?.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
@@ -1116,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 5. クローク利用 (Z列: クローク利用有無) & 預かり番号入力欄 (AA列)
+    // 5. クローク利用 (Z列: クローク利用有無) & 預かり番号入力欄の表示制御
     if (elements.toggleCloakBtn) {
       elements.toggleCloakBtn.disabled = false;
       if (participant.cloakUsed) {
@@ -1126,12 +1155,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>クローク利用有</span>
         `;
         elements.cloakNumberContainer?.classList.remove('hidden');
-        if (elements.cloakNumberInput) {
-          elements.cloakNumberInput.disabled = false;
-          if (document.activeElement !== elements.cloakNumberInput) {
-            elements.cloakNumberInput.value = participant.cloakNumber || '';
-          }
-        }
       } else {
         elements.toggleCloakBtn.className = 'touch-target py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm border border-slate-300 active:scale-[0.98] transition flex items-center justify-center space-x-1.5 cursor-pointer col-span-2 sm:col-span-1';
         elements.toggleCloakBtn.innerHTML = `
@@ -1139,42 +1162,63 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>クローク未利用</span>
         `;
         elements.cloakNumberContainer?.classList.add('hidden');
-        if (elements.cloakNumberInput) {
-          elements.cloakNumberInput.disabled = true;
-        }
       }
     }
   }
 
   /**
-   * モーダルを閉じて変更内容を一括保存（バッチ書き込み）
+   * 右上の「✕」ボタン（またはEscapeキー）：変更を破棄（キャンセル）してモーダルを閉じる
+   * ※スプレッドシートへの更新やローカルデータの変更は一切行わない
+   */
+  function cancelAndCloseDetailModal() {
+    elements.detailModal?.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+    state.selectedParticipant = null;
+    modalDraft = null;
+    currentModalParticipantId = null;
+    hasModalChanges = false;
+  }
+
+  /**
+   * 「確定して閉じる」ボタン：変更内容を確定し、スプレッドシートへ一括保存（バッチ書き込み）してモーダルを閉じる
    */
   async function saveAndCloseDetailModal() {
-    const participantToSave = state.selectedParticipant;
-    const needsSave = hasModalChanges && participantToSave;
+    const targetParticipant = state.selectedParticipant;
+    const draftToSave = modalDraft;
+    const needsSave = hasModalChanges && targetParticipant && draftToSave;
 
     // モーダルを即座に非表示にして次の操作へスムーズに移行
     elements.detailModal?.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
     state.selectedParticipant = null;
+    modalDraft = null;
     currentModalParticipantId = null;
     hasModalChanges = false;
 
-    // 変更があった場合のみ、確定した最新ステータスを1回だけまとめてデータベースへ送信
+    // 変更があった場合のみ、ドラフトの変更をローカル状態へ反映し、1回だけまとめてデータベースへ送信
     if (needsSave) {
-      const finalCloakNumber = participantToSave.cloakUsed
-        ? String(participantToSave.cloakNumber || '').trim()
-        : '';
-      participantToSave.cloakNumber = finalCloakNumber;
+      targetParticipant.checkedIn = draftToSave.checkedIn;
+      targetParticipant.bentoConfirmed = draftToSave.bentoConfirmed;
+      targetParticipant.bentoExchanged = draftToSave.bentoExchanged;
+      targetParticipant.bentoDelivered = draftToSave.bentoDelivered;
+      targetParticipant.feeConfirmed = draftToSave.feeConfirmed;
+      targetParticipant.cloakUsed = draftToSave.cloakUsed;
+      targetParticipant.cloakNumber = draftToSave.cloakNumber || '';
+
+      // 統計バー・一覧/カード描画・ローカルキャッシュを一括更新
+      updateStatistics();
+      renderCurrentView();
+      window.queueManager?.setCachedParticipants(state.participants);
 
       const payload = {
-        id: participantToSave.id,
-        checkedIn: participantToSave.checkedIn,
-        bentoConfirmed: participantToSave.bentoConfirmed || participantToSave.bentoExchanged,
-        bentoDelivered: participantToSave.bentoDelivered,
-        feeConfirmed: participantToSave.feeConfirmed,
-        cloakUsed: participantToSave.cloakUsed,
-        cloakNumber: finalCloakNumber,
-        rowIndex: participantToSave.rowIndex,
+        id: targetParticipant.id,
+        checkedIn: targetParticipant.checkedIn,
+        bentoConfirmed: targetParticipant.bentoConfirmed || targetParticipant.bentoExchanged,
+        bentoDelivered: targetParticipant.bentoDelivered,
+        feeConfirmed: targetParticipant.feeConfirmed,
+        cloakUsed: targetParticipant.cloakUsed,
+        cloakNumber: targetParticipant.cloakNumber || '',
+        rowIndex: targetParticipant.rowIndex,
       };
 
       if (navigator.onLine) {
@@ -1192,9 +1236,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const result = await response.json();
           if (result.success && result.data?.updatedAt) {
-            participantToSave.updatedAt = result.data.updatedAt;
+            targetParticipant.updatedAt = result.data.updatedAt;
             if (result.data.cloakNumber !== undefined) {
-              participantToSave.cloakNumber = result.data.cloakNumber;
+              targetParticipant.cloakNumber = result.data.cloakNumber;
             }
             renderCurrentView(); // 最終更新日時を一覧・カードへ反映
             // スプレッドシート側の最新状態と自然に同期
@@ -1210,75 +1254,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 閉じるボタンおよびフッター確定ボタンで保存・終了（※modalBackdropのクリックは無効化）
-  elements.modalCloseButton?.addEventListener('click', saveAndCloseDetailModal);
+  // 右上「✕」ボタンおよびEscapeキーはキャンセル（保存せず閉じる）、フッター「確定して閉じる」ボタンのみ一括保存
+  elements.modalCloseButton?.addEventListener('click', cancelAndCloseDetailModal);
   elements.modalFooterCloseButton?.addEventListener('click', saveAndCloseDetailModal);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !elements.detailModal?.classList.contains('hidden')) {
-      saveAndCloseDetailModal();
+      cancelAndCloseDetailModal();
     }
   });
 
   /**
-   * ステータス更新トリガー（待ち時間なし・即時UI反映・ローカル変更記録）
+   * ステータス更新トリガー（モーダル内のドラフト状態・モーダル表示のみ更新し、「確定して閉じる」押下まで一括保留）
    */
   function handleToggleStatus(field) {
-    if (!state.selectedParticipant) return;
-    const currentParticipant = state.selectedParticipant;
+    if (!modalDraft) return;
 
-    // 1. フィールドごとのトグル判定 & ダーティフラグ設定
+    // 1. フィールドごとのトグル判定 & ダーティフラグ設定（modalDraftのみ変更）
     if (field === 'checkedIn') {
-      currentParticipant.checkedIn = !currentParticipant.checkedIn;
+      modalDraft.checkedIn = !modalDraft.checkedIn;
       hasModalChanges = true;
     } else if (field === 'bentoConfirmed') {
-      if (!currentParticipant.bentoOrdered) return;
-      const nextState = !(currentParticipant.bentoConfirmed || currentParticipant.bentoExchanged);
-      currentParticipant.bentoConfirmed = nextState;
-      currentParticipant.bentoExchanged = nextState;
+      if (!modalDraft.bentoOrdered) return;
+      const nextState = !(modalDraft.bentoConfirmed || modalDraft.bentoExchanged);
+      modalDraft.bentoConfirmed = nextState;
+      modalDraft.bentoExchanged = nextState;
       hasModalChanges = true;
     } else if (field === 'bentoDelivered') {
-      if (!currentParticipant.bentoOrdered) return;
-      currentParticipant.bentoDelivered = !currentParticipant.bentoDelivered;
+      if (!modalDraft.bentoOrdered) return;
+      modalDraft.bentoDelivered = !modalDraft.bentoDelivered;
       hasModalChanges = true;
     } else if (field === 'feeConfirmed') {
-      if (currentParticipant.feePaid) return;
-      currentParticipant.feeConfirmed = !currentParticipant.feeConfirmed;
+      if (modalDraft.feePaid) return;
+      modalDraft.feeConfirmed = !modalDraft.feeConfirmed;
       hasModalChanges = true;
     } else if (field === 'cloakUsed') {
-      currentParticipant.cloakUsed = !currentParticipant.cloakUsed;
-      if (currentParticipant.cloakUsed) {
-        currentParticipant.cloakNumber = elements.cloakNumberInput
-          ? elements.cloakNumberInput.value.trim()
-          : (currentParticipant.cloakNumber || '');
+      modalDraft.cloakUsed = !modalDraft.cloakUsed;
+      if (!modalDraft.cloakUsed) {
+        // クローク利用を解除した場合は預かり番号もクリア
+        modalDraft.cloakNumber = '';
+        if (elements.cloakNumberInput) {
+          elements.cloakNumberInput.value = '';
+        }
       } else {
-        currentParticipant.cloakNumber = '';
+        setTimeout(() => elements.cloakNumberInput?.focus(), 50);
       }
       hasModalChanges = true;
     }
 
-    // 2. モーダル内テキスト表示、トグルボタン表示、全体統計の即時更新
-    updateModalInfoDisplay(currentParticipant);
-    updateModalToggleButtons(currentParticipant);
-    if (field === 'cloakUsed' && currentParticipant.cloakUsed) {
-      setTimeout(() => elements.cloakNumberInput?.focus(), 50);
-    }
-    updateStatistics();
-    renderCurrentView();
-
-    // 3. キャッシュの即時更新
-    window.queueManager?.setCachedParticipants(state.participants);
+    // 2. モーダル内のテキスト表示とトグルボタン表示のみ即時更新（※全体統計・一覧・スプレッドシートは「確定して閉じる」まで更新しない）
+    updateModalInfoDisplay(modalDraft);
+    updateModalToggleButtons(modalDraft);
   }
 
-  // クローク預かり番号の入力イベント（リアルタイム反映・モーダル閉塞時に一括保存）
-  elements.cloakNumberInput?.addEventListener('input', (e) => {
-    if (!state.selectedParticipant) return;
-    state.selectedParticipant.cloakNumber = e.target.value.trim();
-    hasModalChanges = true;
-    updateModalInfoDisplay(state.selectedParticipant);
-    renderCurrentView();
-    window.queueManager?.setCachedParticipants(state.participants);
-  });
-
+  /**
+   * クローク預かり番号入力イベント（モーダル内のドラフト状態にのみ記録）
+   */
+  function handleCloakNumberChange(e) {
+    if (!modalDraft) return;
+    const newVal = e.target.value.trim();
+    if ((modalDraft.cloakNumber || '') !== newVal) {
+      modalDraft.cloakNumber = newVal;
+      hasModalChanges = true;
+      updateModalInfoDisplay(modalDraft);
+    }
+  }
+  elements.cloakNumberInput?.addEventListener('input', handleCloakNumberChange);
+  elements.cloakNumberInput?.addEventListener('change', handleCloakNumberChange);
   elements.cloakNumberInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();

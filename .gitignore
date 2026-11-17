@@ -1,6 +1,0 @@
-node_modules/
-.wrangler/
-dist/
-.env
-.DS_Store
-Thumbs.db

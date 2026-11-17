@@ -271,8 +271,8 @@
 
       <!-- モーダル固定ヘッダー（氏名・所属・クローズボタン） -->
       <div class="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-100 flex-shrink-0 relative">
-        <!-- クローズボタン (大きな×ボタン) -->
-        <button type="button" id="modalCloseButton" title="詳細モーダルを閉じる" aria-label="詳細モーダルを閉じる"
+        <!-- キャンセルボタン (右上の×ボタン: 更新せずに閉じる) -->
+        <button type="button" id="modalCloseButton" title="変更を破棄して閉じる（キャンセル）" aria-label="変更を破棄して閉じる（キャンセル）"
           class="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 touch-target p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition cursor-pointer">
           <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -300,7 +300,7 @@
         <div class="space-y-2 p-3 sm:p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
           <div class="flex items-center justify-between">
             <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">ステータス更新</p>
-            <span class="text-[11px] text-indigo-600 font-semibold">※閉じる時にまとめて保存されます</span>
+            <span class="text-[11px] text-indigo-600 font-semibold">※「確定して閉じる」で一括保存されます</span>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
@@ -416,7 +416,7 @@
 
       <!-- モーダル固定フッター（確定して閉じるボタン） -->
       <div class="p-3 sm:p-4 bg-slate-50/80 border-t border-slate-200 flex-shrink-0 flex flex-col sm:flex-row justify-between items-center gap-2">
-        <span class="text-[11px] text-slate-500 font-medium text-center sm:text-left">※変更内容は「確定して閉じる」または「✕」でデータベースに保存されます</span>
+        <span class="text-[11px] text-slate-500 font-medium text-center sm:text-left">※「確定して閉じる」で一括保存されます（右上の「✕」は変更を破棄して閉じます）</span>
         <button type="button" id="modalFooterCloseButton"
           class="touch-target w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-1.5 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
