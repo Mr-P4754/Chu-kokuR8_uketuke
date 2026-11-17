@@ -75,8 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
     modalOrg: document.getElementById('modalOrg'),
     modalPosition: document.getElementById('modalPosition'),
     modalId: document.getElementById('modalId'),
-    modalPhone: document.getElementById('modalPhone'),
-    modalEmail: document.getElementById('modalEmail'),
     modalLocation: document.getElementById('modalLocation'),
     modalTransport: document.getElementById('modalTransport'),
     modalGrade: document.getElementById('modalGrade'),
@@ -497,10 +495,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
       }
 
-      // 漢字氏名・所属・電話番号・システムID（UUID）・クローク預かり番号での検索一致
+      // 漢字氏名・所属・システムID（UUID）・クローク預かり番号での検索一致
       const fullName = `${normalizeString(p.lastName)}${normalizeString(p.firstName)}`;
       const org = normalizeString(p.organization);
-      const phone = `${p.phone1}${p.phone2}${p.phone3}`;
       const cloakNum = normalizeString(p.cloakNumber || '');
       const idRaw = (p.id || '').toLowerCase();
       const idClean = idRaw.replace(/[^a-z0-9]/g, '');
@@ -509,7 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return (
         fullName.includes(normQuery) ||
         org.includes(normQuery) ||
-        phone.includes(normQuery) ||
         (cloakNum && cloakNum.includes(normQuery)) ||
         idRaw.includes(normQuery) ||
         (queryClean.length >= 3 && idClean.includes(queryClean))
@@ -981,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * モーダル内の全静的テキスト情報（氏名・所属・連絡先等）を更新
+   * モーダル内の全静的テキスト情報（氏名・所属等）を更新
    */
   function updateModalStaticInfo(participant) {
     if (!participant) return;
@@ -990,8 +986,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.modalOrg) elements.modalOrg.textContent = participant.organization || '-';
     if (elements.modalPosition) elements.modalPosition.textContent = participant.position || '-';
     if (elements.modalId) elements.modalId.textContent = participant.id ? participant.id.substring(0, 8).toUpperCase() : '-';
-    if (elements.modalPhone) elements.modalPhone.textContent = [participant.phone1, participant.phone2, participant.phone3].filter(Boolean).join('-') || '-';
-    if (elements.modalEmail) elements.modalEmail.textContent = participant.email || '-';
     if (elements.modalLocation) elements.modalLocation.textContent = participant.location || '-';
     if (elements.modalTransport) elements.modalTransport.textContent = participant.transportation || '-';
     if (elements.modalGrade) elements.modalGrade.textContent = participant.desiredGrade || '-';

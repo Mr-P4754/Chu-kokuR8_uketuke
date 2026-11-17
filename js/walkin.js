@@ -144,26 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     e.target.value = toKatakana(e.target.value.trim());
   });
 
-  // 電話番号の入力制限とオートフォーカス移動
-  const phone1Input = document.getElementById('phone1');
-  const phone2Input = document.getElementById('phone2');
-  const phone3Input = document.getElementById('phone3');
-
-  const setupAutoTab = (currentInput, nextInput, maxLength) => {
-    currentInput?.addEventListener('input', (e) => {
-      e.target.value = e.target.value.replace(/[^0-9]/g, '');
-      if (e.target.value.length >= maxLength && nextInput) {
-        nextInput.focus();
-      }
-    });
-  };
-
-  setupAutoTab(phone1Input, phone2Input, 3);
-  setupAutoTab(phone2Input, phone3Input, 4);
-  phone3Input?.addEventListener('input', (e) => {
-    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-  });
-
   /**
    * フォーム送信ハンドラー
    */
@@ -180,10 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const organization = String(formData.get('organization') || '').trim();
     const position = String(formData.get('position') || '').trim();
     const location = String(formData.get('location') || '').trim();
-    const phone1 = String(formData.get('phone1') || '').trim();
-    const phone2 = String(formData.get('phone2') || '').trim();
-    const phone3 = String(formData.get('phone3') || '').trim();
-    const email = String(formData.get('email') || '').trim();
+    const phone1 = '';
+    const phone2 = '';
+    const phone3 = '';
+    const email = '';
     const transportation = String(formData.get('transportation') || '').trim();
     const desiredGrade = String(formData.get('desiredGrade') || '').trim();
     const subcommittee1 = String(formData.get('subcommittee1') || '').trim();
