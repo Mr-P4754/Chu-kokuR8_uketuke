@@ -30,7 +30,7 @@ export interface PublicSettingsData {
 }
 
 /**
- * 参加者データのインターフェース（スプレッドシート24列に対応）
+ * 参加者データのインターフェース（スプレッドシート27列 A〜AA に対応）
  */
 export interface Participant {
   id: string; // [1] A: システムID (UUID)
@@ -60,6 +60,7 @@ export interface Participant {
   feeConfirmed: boolean; // [24] X: 参加費支払確認 (TRUE/FALSE: 当日受領フラグ)
   bentoDelivered: boolean; // [25] Y: 弁当引換（実物） (TRUE/FALSE)
   cloakUsed: boolean; // [26] Z: クローク利用 (TRUE/FALSE)
+  cloakNumber: string; // [27] AA: クローク預かり番号
   rowIndex?: number; // スプレッドシート上の行番号（2行目以降、1-indexed）
 }
 
@@ -74,6 +75,7 @@ export interface UpdateStatusRequest {
   feeConfirmed?: boolean; // 参加費支払確認 (X列: 当日受領フラグ)
   bentoDelivered?: boolean; // 弁当引換（実物） (Y列)
   cloakUsed?: boolean; // クローク利用 (Z列)
+  cloakNumber?: string; // クローク預かり番号 (AA列)
   rowIndex?: number; // 行番号（指定があれば検索をスキップ可能）
 }
 
@@ -105,6 +107,7 @@ export interface WalkinRegistrationRequest {
   feeConfirmed?: boolean; // 参加費支払確認（指定なし時はfalse）
   bentoDelivered?: boolean; // 弁当引換（実物）（指定なし時はfalse）
   cloakUsed?: boolean; // クローク利用（指定なし時はfalse）
+  cloakNumber?: string; // クローク預かり番号
 }
 
 /**

@@ -225,7 +225,7 @@ function extractSpreadsheetId(input: string): string {
 }
 
 /**
- * Googleスプレッドシートから全参加者情報を取得
+ * Googleスプレッドシートから全参加者情報を取得（空行・チェックボックスのみの行は除外）
  */
 export async function fetchAllParticipants(env: EnvironmentVariables): Promise<Participant[]> {
   const token = await getGoogleAccessToken(
@@ -235,7 +235,7 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
 
   const sheetName = env.GOOGLE_SHEET_NAME || '参加者情報一覧';
   const spreadsheetId = extractSpreadsheetId(env.GOOGLE_SPREADSHEET_ID);
-  const range = encodeURIComponent(`'${sheetName}'!A2:Z`); // ヘッダー行を除く全26列（A〜Z）
+  const range = encodeURIComponent(`'${sheetName}'!A2:AA`); // ヘッダー行を除く全27列（A〜AA）
 
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=FORMATTED_VALUE`;
 
@@ -254,63 +254,86 @@ export async function fetchAllParticipants(env: EnvironmentVariables): Promise<P
   const result = (await response.json()) as { values?: (string | boolean)[][] };
   const rows = result.values || [];
 
-  return rows.map((row, index) => {
-    const rowIndex = index + 2; // スプレッドシートの行番号（2行目スタート）
-    const parseBoolean = (value: unknown): boolean => {
-      if (typeof value === 'boolean') return value;
-      if (typeof value === 'string') {
-        const normalized = value.trim().toUpperCase();
-        return normalized === 'TRUE' || normalized === '1' || normalized === 'はい' || normalized === '済';
-      }
-      return false;
-    };
+  return rows
+    .map((row, index) => {
+      const rowIndex = index + 2; // スプレッドシートの行番号（2行目スタート）
+      const parseBoolean = (value: unknown): boolean => {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+          const normalized = value.trim().toUpperCase();
+          return normalized === 'TRUE' || normalized === '1' || normalized === 'はい' || normalized === '済';
+        }
+        return false;
+      };
 
-    const bentoConfirmed = parseBoolean(row[22]); // [23] W列: 弁当券引換確認
-    const feeConfirmed = parseBoolean(row[23]); // [24] X列: 参加費支払確認（当日受領）
-    const bentoDelivered = parseBoolean(row[24]); // [25] Y列: 弁当引換（実物）
-    const cloakUsed = parseBoolean(row[25]); // [26] Z列: クローク利用
+      const bentoConfirmed = parseBoolean(row[22]); // [23] W列: 弁当券引換確認
+      const feeConfirmed = parseBoolean(row[23]); // [24] X列: 参加費支払確認（当日受領）
+      const bentoDelivered = parseBoolean(row[24]); // [25] Y列: 弁当引換（実物）
+      const cloakUsed = parseBoolean(row[25]); // [26] Z列: クローク利用
+      const cloakNumber = String(row[26] || '').trim(); // [27] AA列: クローク預かり番号
 
-    return {
-      id: String(row[0] || '').trim(),
-      organization: String(row[1] || '').trim(),
-      lastName: String(row[2] || '').trim(),
-      firstName: String(row[3] || '').trim(),
-      lastNameKana: String(row[4] || '').trim(),
-      firstNameKana: String(row[5] || '').trim(),
-      phone1: String(row[6] || '').trim(),
-      phone2: String(row[7] || '').trim(),
-      phone3: String(row[8] || '').trim(),
-      email: String(row[9] || '').trim(),
-      position: String(row[10] || '').trim(),
-      transportation: String(row[11] || '').trim(),
-      desiredGrade: String(row[12] || '').trim(),
-      subcommittee1: String(row[13] || '').trim(),
-      subcommittee2: String(row[14] || '').trim(),
-      notes: String(row[15] || '').trim(),
-      location: String(row[16] || '').trim(),
-      checkedIn: parseBoolean(row[17]), // [18] R列: 受付状況
-      bentoOrdered: parseBoolean(row[18]), // [19] S列: 弁当事前注文有無
-      feePaid: parseBoolean(row[19]), // [20] T列: 参加費事前支払（変更不可）
-      isWalkin: parseBoolean(row[20]), // [21] U列: 当日受付
-      updatedAt: String(row[21] || '').trim(), // [22] V列: 最終更新日時
-      bentoConfirmed, // [23] W列: 弁当券引換確認
-      bentoExchanged: bentoConfirmed, // 互換用プロパティ
-      feeConfirmed, // [24] X列: 参加費支払確認
-      bentoDelivered, // [25] Y列: 弁当引換（実物）
-      cloakUsed, // [26] Z列: クローク利用
-      rowIndex,
-    };
-  });
+      return {
+        id: String(row[0] || '').trim(),
+        organization: String(row[1] || '').trim(),
+        lastName: String(row[2] || '').trim(),
+        firstName: String(row[3] || '').trim(),
+        lastNameKana: String(row[4] || '').trim(),
+        firstNameKana: String(row[5] || '').trim(),
+        phone1: String(row[6] || '').trim(),
+        phone2: String(row[7] || '').trim(),
+        phone3: String(row[8] || '').trim(),
+        email: String(row[9] || '').trim(),
+        position: String(row[10] || '').trim(),
+        transportation: String(row[11] || '').trim(),
+        desiredGrade: String(row[12] || '').trim(),
+        subcommittee1: String(row[13] || '').trim(),
+        subcommittee2: String(row[14] || '').trim(),
+        notes: String(row[15] || '').trim(),
+        location: String(row[16] || '').trim(),
+        checkedIn: parseBoolean(row[17]), // [18] R列: 受付状況
+        bentoOrdered: parseBoolean(row[18]), // [19] S列: 弁当事前注文有無
+        feePaid: parseBoolean(row[19]), // [20] T列: 参加費事前支払（変更不可）
+        isWalkin: parseBoolean(row[20]), // [21] U列: 当日受付
+        updatedAt: String(row[21] || '').trim(), // [22] V列: 最終更新日時
+        bentoConfirmed, // [23] W列: 弁当券引換確認
+        bentoExchanged: bentoConfirmed, // 互換用プロパティ
+        feeConfirmed, // [24] X列: 参加費支払確認
+        bentoDelivered, // [25] Y列: 弁当引換（実物）
+        cloakUsed, // [26] Z列: クローク利用
+        cloakNumber, // [27] AA列: クローク預かり番号
+        rowIndex,
+      };
+    })
+    .filter((participant) =>
+      Boolean(
+        participant.id ||
+        participant.lastName ||
+        participant.firstName ||
+        participant.lastNameKana ||
+        participant.firstNameKana
+      )
+    );
 }
 
 /**
- * 参加者の受付ステータス（受付・弁当券引換確認・参加費支払確認・更新日時）を更新
+ * 参加者の受付ステータス（受付・弁当券引換確認・参加費支払確認・弁当引換・クローク利用・預かり番号・更新日時）を一括更新
  * ※ T列（参加費事前支払）は変更せずそのまま維持
  */
 export async function updateParticipantStatus(
   env: EnvironmentVariables,
   payload: UpdateStatusRequest
-): Promise<{ id: string; checkedIn?: boolean; bentoOrdered?: boolean; bentoConfirmed?: boolean; feePaid?: boolean; feeConfirmed?: boolean; bentoDelivered?: boolean; cloakUsed?: boolean; updatedAt: string }> {
+): Promise<{
+  id: string;
+  checkedIn?: boolean;
+  bentoOrdered?: boolean;
+  bentoConfirmed?: boolean;
+  feePaid?: boolean;
+  feeConfirmed?: boolean;
+  bentoDelivered?: boolean;
+  cloakUsed?: boolean;
+  cloakNumber?: string;
+  updatedAt: string;
+}> {
   const token = await getGoogleAccessToken(
     env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     env.GOOGLE_PRIVATE_KEY
@@ -334,8 +357,8 @@ export async function updateParticipantStatus(
   const updatedAt = getJstTimestamp();
 
   // 現在の行の値を取得して指定されたフラグのみを上書き、または直接更新
-  // R列(18):受付状況, S列(19):弁当事前注文(維持), T列(20):参加費事前支払(維持), U列(21):当日受付(維持), V列(22):最終更新日時, W列(23):弁当券引換確認, X列(24):参加費支払確認, Y列(25):弁当引換(実物), Z列(26):クローク利用
-  const rangeRead = `'${sheetName}'!R${targetRowIndex}:Z${targetRowIndex}`;
+  // R列(18):受付状況, S列(19):弁当事前注文(維持), T列(20):参加費事前支払(維持), U列(21):当日受付(維持), V列(22):最終更新日時, W列(23):弁当券引換確認, X列(24):参加費支払確認, Y列(25):弁当引換(実物), Z列(26):クローク利用, AA列(27):クローク預かり番号
+  const rangeRead = `'${sheetName}'!R${targetRowIndex}:AA${targetRowIndex}`;
   const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(rangeRead)}?valueRenderOption=UNFORMATTED_VALUE`;
   
   const readResponse = await fetchWithExponentialBackoff(readUrl, {
@@ -360,6 +383,7 @@ export async function updateParticipantStatus(
   let currentFeeConfirmed = false;
   let currentBentoDelivered = false;
   let currentCloakUsed = false;
+  let currentCloakNumber = '';
 
   if (readResponse.ok) {
     const readResult = (await readResponse.json()) as { values?: unknown[][] };
@@ -372,6 +396,7 @@ export async function updateParticipantStatus(
     currentFeeConfirmed = parseBooleanVal(rowValues[6]); // X (参加費支払確認)
     currentBentoDelivered = parseBooleanVal(rowValues[7]); // Y (弁当引換・実物)
     currentCloakUsed = parseBooleanVal(rowValues[8]); // Z (クローク利用)
+    currentCloakNumber = String(rowValues[9] ?? '').trim(); // AA (クローク預かり番号)
   }
 
   const finalCheckedIn = payload.checkedIn !== undefined ? payload.checkedIn : currentCheckedIn;
@@ -380,8 +405,10 @@ export async function updateParticipantStatus(
   const finalFeeConfirmed = payload.feeConfirmed !== undefined ? payload.feeConfirmed : currentFeeConfirmed;
   const finalBentoDelivered = payload.bentoDelivered !== undefined ? payload.bentoDelivered : currentBentoDelivered;
   const finalCloakUsed = payload.cloakUsed !== undefined ? payload.cloakUsed : currentCloakUsed;
+  const rawCloakNumber = payload.cloakNumber !== undefined ? String(payload.cloakNumber).trim() : currentCloakNumber;
+  const finalCloakNumber = finalCloakUsed ? rawCloakNumber : '';
 
-  const rangeWrite = `'${sheetName}'!R${targetRowIndex}:Z${targetRowIndex}`;
+  const rangeWrite = `'${sheetName}'!R${targetRowIndex}:AA${targetRowIndex}`;
   const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(rangeWrite)}?valueInputOption=USER_ENTERED`;
 
   const bodyData = {
@@ -398,6 +425,7 @@ export async function updateParticipantStatus(
         finalFeeConfirmed ? 'TRUE' : 'FALSE', // X: 参加費支払確認 (当日受領)
         finalBentoDelivered ? 'TRUE' : 'FALSE', // Y: 弁当引換 (実物)
         finalCloakUsed ? 'TRUE' : 'FALSE', // Z: クローク利用
+        finalCloakNumber, // AA: クローク預かり番号
       ],
     ],
   };
@@ -425,12 +453,13 @@ export async function updateParticipantStatus(
     feeConfirmed: finalFeeConfirmed,
     bentoDelivered: finalBentoDelivered,
     cloakUsed: finalCloakUsed,
+    cloakNumber: finalCloakNumber,
     updatedAt,
   };
 }
 
 /**
- * 当日参加者をスプレッドシートの末尾に新規登録
+ * 当日参加者をスプレッドシートの末尾（最初の空行）に新規登録
  */
 export async function appendWalkinParticipant(
   env: EnvironmentVariables,
@@ -447,6 +476,8 @@ export async function appendWalkinParticipant(
   // システムID（UUID v4）の自動採番
   const generatedId = crypto.randomUUID();
   const timestamp = getJstTimestamp();
+  const cloakUsed = payload.cloakUsed || false;
+  const cloakNumber = cloakUsed ? String(payload.cloakNumber || '').trim() : '';
 
   const newParticipant: Participant = {
     id: generatedId,
@@ -475,10 +506,11 @@ export async function appendWalkinParticipant(
     bentoExchanged: payload.bentoConfirmed || false,
     feeConfirmed: payload.feeConfirmed || false,
     bentoDelivered: payload.bentoDelivered || false,
-    cloakUsed: payload.cloakUsed || false,
+    cloakUsed,
+    cloakNumber,
   };
 
-  // 26列の配列データを作成（A〜Z）
+  // 27列の配列データを作成（A〜AA）
   const rowValues = [
     newParticipant.id, // A [1]
     newParticipant.organization, // B [2]
@@ -506,9 +538,51 @@ export async function appendWalkinParticipant(
     newParticipant.feeConfirmed ? 'TRUE' : 'FALSE', // X [24]
     newParticipant.bentoDelivered ? 'TRUE' : 'FALSE', // Y [25]
     newParticipant.cloakUsed ? 'TRUE' : 'FALSE', // Z [26]
+    newParticipant.cloakNumber, // AA [27]
   ];
 
-  const targetAppendRange = `'${sheetName}'!A:Z`;
+  // A〜F列を参照して最初の空行（チェックボックスのみの行を含む）を特定
+  const checkRange = encodeURIComponent(`'${sheetName}'!A2:F`);
+  const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${checkRange}?valueRenderOption=FORMATTED_VALUE`;
+  const checkResponse = await fetchWithExponentialBackoff(checkUrl, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (checkResponse.ok) {
+    const checkResult = (await checkResponse.json()) as { values?: string[][] };
+    const existingRows = checkResult.values || [];
+    let lastPopulatedIndex = -1;
+    for (let i = 0; i < existingRows.length; i++) {
+      const r = existingRows[i] || [];
+      if (r.some((cell) => String(cell || '').trim() !== '')) {
+        lastPopulatedIndex = i;
+      }
+    }
+    const targetRowNumber = lastPopulatedIndex + 3; // 2行目開始 + (lastPopulatedIndex + 1)
+    const writeRange = `'${sheetName}'!A${targetRowNumber}:AA${targetRowNumber}`;
+    const writeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(writeRange)}?valueInputOption=USER_ENTERED`;
+
+    const writeResponse = await fetchWithExponentialBackoff(writeUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        range: writeRange,
+        majorDimension: 'ROWS',
+        values: [rowValues],
+      }),
+    });
+
+    if (writeResponse.ok) {
+      newParticipant.rowIndex = targetRowNumber;
+      return newParticipant;
+    }
+  }
+
+  const targetAppendRange = `'${sheetName}'!A:AA`;
   const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(targetAppendRange)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const response = await fetchWithExponentialBackoff(appendUrl, {
